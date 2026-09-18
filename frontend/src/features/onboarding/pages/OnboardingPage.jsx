@@ -71,7 +71,7 @@ export default function OnboardingPage() {
             <CalendarStep
               workspace={workspace}
               onError={setFormError}
-              onDone={(ws) => { addWorkspace(ws); navigate(paths.app, { replace: true }); }}
+              onDone={(ws) => { addWorkspace(ws); navigate(paths.sortStart, { replace: true }); }}
             />
           )}
         </div>
@@ -270,7 +270,7 @@ function CalendarStep({ workspace, onDone, onError }) {
           Continue with Microsoft Outlook
         </Button>
         <p className="field-hint mb-0">
-          Calendar sync lands in the next phase. Until then you can finish setup and add your week by hand.
+          Calendar sync is not wired up yet. Finish setup and you go straight into a ten-minute walk through last week.
         </p>
       </div>
 
@@ -284,7 +284,7 @@ function CalendarStep({ workspace, onDone, onError }) {
 
       <div className="stack gap-2">
         <Button onClick={() => finish(false)} loading={busy} loadingLabel="Finishing">
-          Finish setup
+          Finish setup and sort last week
         </Button>
         <Button variant="quiet" onClick={() => finish(true)} disabled={busy}>
           Skip for now

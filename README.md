@@ -7,10 +7,11 @@ ReclaimOS finds the work consuming a founder's time, calculates its cost,
 creates a plan to eliminate, automate, or delegate it, and helps the team
 execute the replacement — then measures how much time actually came back.
 
-> **Status: phases 0–1 built.** Authentication, workspaces, memberships, the
-> onboarding wizard and the design system are implemented and tested. The audit,
-> sort, advisor and measurement features are specified in `docs/` but not yet
-> written — see [`SETUP.md`](SETUP.md) to run what exists.
+> **Status: the MVP loop is built and tested.** Sort → matrix → advisor → plan →
+> playbook → delegation → verification → weekly review all work end to end.
+> Calendar sync, email delivery and billing are not built. See
+> [`SETUP.md`](SETUP.md) to run it, including a seed command that populates a
+> demo workspace.
 
 ```
 backend/    Node 20 · Express · MongoDB · Mongoose · Zod · Vitest

@@ -62,12 +62,57 @@ instance you already have:
 MONGODB_TEST_URI=mongodb://127.0.0.1:27017/reclaimos-itest npm run test:integration
 ```
 
+## 6. Try the whole loop
+
+```bash
+npm run seed --prefix backend
+```
+
+That creates a demo workspace with a fortnight of realistic activity. Sign in
+with `founder@reclaimos.test` / `reclaim-your-time-2026` and the dashboard, the
+matrix and the advisor are populated immediately.
+
+To walk the loop from nothing instead: register, finish the three onboarding
+steps, and you land straight in the ten-minute sort.
+
+```
+sign up → onboarding (3 steps) → sort last week (~10 min) → your week and its cost
+   → advisor recommends → accept → plan approved, baseline frozen
+   → draft a playbook → assign it → log the reduced time → verify
+   → weekly review proposes the next one
+```
+
 ## What is built
 
-Phases 0 and 1 of `docs/08-entry-path-revision.md`: authentication, workspaces,
-memberships, the three-step onboarding wizard, and the design system.
+The complete MVP loop from `docs/08-entry-path-revision.md`:
 
-The audit, sort, advisor and measurement features are specified but not yet
-implemented. The sidebar shows them as unavailable rather than linking to
-screens that do not exist, and the dashboard says it has nothing to measure
-rather than displaying zeroes as though they were data.
+| Area | State |
+|---|---|
+| Auth, workspaces, memberships, RBAC | built |
+| Onboarding (3 steps) | built |
+| The sort — grouping + classification | built |
+| Time audit, manual entries | built |
+| DRIP matrix with manual reclassification | built |
+| Recommendation engine + evidence + confidence | built |
+| Buyback plans, frozen baseline, verification + coverage | built |
+| Playbooks, drafting, publishing, versions, runs | built |
+| Delegation queue | built |
+| Weekly review | built |
+| Settings, buyback rate, invitations | built |
+| Calendar (Google/Outlook) sync | **not built** — the sort takes manual recall |
+| Email delivery (invites, resets) | **not built** — tokens are issued server-side, not mailed |
+| AI narration via an LLM | **not built** — the engine is deterministic; see below |
+| Billing | **not built** |
+
+### About the "AI"
+
+The advisor is a deterministic engine (`backend/src/services/recommendations.engine.js`).
+Every number a user sees — the action, the hours, the confidence — is computed
+from their own entries, so it can be explained, tested and reproduced. A
+language model is optional and confined to `narrator.js`, where it would phrase
+the sentence and nothing else. Swapping that one file changes the prose and no
+figure on the screen.
+
+This is not a stand-in for a missing API key. Confidence computed from declared
+signals is the design; a model-asserted confidence number is not evidence of
+anything.
