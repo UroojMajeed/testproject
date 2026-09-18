@@ -12,7 +12,11 @@ reclaimos/
 ## 1. Prerequisites
 
 - Node 20 or newer
-- MongoDB 7 — either running locally, or `npm run db:up` if you have Docker
+- MongoDB — any one of:
+  - Docker: `npm run db:up` (easiest, uses the bundled `docker-compose.yml`)
+  - A local `mongod` you already run
+  - A free MongoDB Atlas cluster — just paste its connection string into
+    `MONGODB_URI` and skip `db:up` entirely
 
 ## 2. Install
 
@@ -65,7 +69,7 @@ MONGODB_TEST_URI=mongodb://127.0.0.1:27017/reclaimos-itest npm run test:integrat
 ## 6. Try the whole loop
 
 ```bash
-npm run seed --prefix backend
+npm run seed
 ```
 
 That creates a demo workspace with a fortnight of realistic activity. Sign in
