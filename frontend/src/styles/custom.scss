@@ -1,0 +1,309 @@
+@use 'tokens' as *;
+
+// ---------------------------------------------------------------------------
+// Bootstrap is themed through its own variables, not overridden afterwards.
+// These must be declared BEFORE the bootstrap import. There is no !important
+// anywhere in this file.
+// ---------------------------------------------------------------------------
+$primary:   $ink;
+$secondary: $ink-2;
+$success:   $verified;
+$warning:   $warn;
+$danger:    $danger;
+$light:     $sunken;
+$dark:      $ink;
+
+$body-bg:    $ground;
+$body-color: $ink;
+
+$font-family-sans-serif: $font-sans;
+$font-family-monospace:  $font-mono;
+$font-size-base:         $fs-400;
+$line-height-base:       $lh-body;
+
+$headings-font-family:    $font-display;
+$headings-font-weight:    400;
+$headings-line-height:    $lh-tight;
+$headings-letter-spacing: -0.01em;
+
+$border-color:  $line;
+$border-radius: $radius;
+$border-radius-sm: $radius-sm;
+$border-radius-lg: $radius-lg;
+
+$input-btn-focus-width:       3px;
+$input-btn-focus-color-opacity: 1;
+$input-btn-focus-color:       rgba($verified, 0.35);
+$input-border-color:          $line-strong;
+$input-placeholder-color:     $ink-3;
+$input-focus-border-color:    $verified;
+
+$btn-font-weight:   500;
+$btn-padding-y:     0.625rem;
+$btn-padding-x:     1rem;
+$btn-font-size:     $fs-300;
+
+$card-border-color: $line;
+$card-bg:           $surface;
+
+$enable-shadows: false;
+$enable-gradients: false;
+
+// Selective import: only the Bootstrap layers this product actually uses.
+// The full bundle is ~235 kB of CSS, most of it components we never render.
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/spinners';
+@import 'bootstrap/scss/helpers';
+
+// The utilities API must come last — it generates the d-flex/gap/p-* classes.
+@import 'bootstrap/scss/utilities/api';
+
+// ---------------------------------------------------------------------------
+// Application layer
+// ---------------------------------------------------------------------------
+
+:root {
+  --ground: #{$ground};
+  --surface: #{$surface};
+  --sunken: #{$sunken};
+  --line: #{$line};
+  --line-strong: #{$line-strong};
+  --ink: #{$ink};
+  --ink-2: #{$ink-2};
+  --ink-3: #{$ink-3};
+  --verified: #{$verified};
+  --estimated: #{$estimated};
+  --warn: #{$warn};
+  --drip-delegation: #{$drip-delegation};
+  --drip-replacement: #{$drip-replacement};
+  --drip-investment: #{$drip-investment};
+  --drip-production: #{$drip-production};
+  --tap-min: #{$tap-min};
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: $font-sans;
+  background: $ground;
+  color: $ink;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+// One visible, high-contrast focus style for keyboard users everywhere.
+// :focus-visible so a mouse click does not paint a ring.
+:focus-visible {
+  outline: 3px solid $verified;
+  outline-offset: 2px;
+  border-radius: $radius-sm;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+// Respect the OS setting rather than animating regardless.
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// Typography -----------------------------------------------------------------
+.display-serif { font-family: $font-display; letter-spacing: -0.015em; line-height: $lh-tight; }
+.font-mono     { font-family: $font-mono; font-feature-settings: 'tnum' 1; }
+.text-muted-2  { color: $ink-2; }
+.text-muted-3  { color: $ink-3; }
+.text-verified { color: $verified; }
+.text-estimated{ color: $estimated; }
+.text-warn     { color: $warn; }
+
+.fs-caption { font-size: $fs-100; }
+.fs-ui-sm   { font-size: $fs-200; }
+.fs-ui      { font-size: $fs-300; }
+.fs-body    { font-size: $fs-400; }
+.fs-lead    { font-size: $fs-500; }
+
+// Numerals are tabular so columns of figures line up.
+.numeral { font-family: $font-mono; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+// Skip link ------------------------------------------------------------------
+.skip-link {
+  position: absolute;
+  left: $sp-4;
+  top: -4rem;
+  z-index: 1080;
+  padding: $sp-3 $sp-4;
+  background: $ink;
+  color: $ink-inverse;
+  border-radius: $radius;
+  text-decoration: none;
+  transition: top 0.15s ease;
+
+  &:focus { top: $sp-4; }
+}
+
+// Buttons --------------------------------------------------------------------
+.btn {
+  min-height: $tap-min;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $sp-2;
+  border-radius: $radius-sm;
+
+  &:disabled, &.disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.btn-primary {
+  --bs-btn-bg: #{$ink};
+  --bs-btn-border-color: #{$ink};
+  --bs-btn-color: #{$ink-inverse};
+  --bs-btn-hover-bg: #2a2621;
+  --bs-btn-hover-border-color: #2a2621;
+  --bs-btn-hover-color: #{$ink-inverse};
+  --bs-btn-active-bg: #000000;
+  --bs-btn-disabled-bg: #{$ink};
+  --bs-btn-disabled-border-color: #{$ink};
+  --bs-btn-disabled-color: #{$ink-inverse};
+}
+
+.btn-outline-ink {
+  --bs-btn-color: #{$ink};
+  --bs-btn-border-color: #{$line-strong};
+  --bs-btn-bg: #{$surface};
+  --bs-btn-hover-bg: #{$sunken};
+  --bs-btn-hover-border-color: #{$line-strong};
+  --bs-btn-hover-color: #{$ink};
+}
+
+.btn-quiet {
+  --bs-btn-color: #{$ink-2};
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-bg: #{$sunken};
+  --bs-btn-hover-color: #{$ink};
+}
+
+// Forms ----------------------------------------------------------------------
+.form-label {
+  font-size: $fs-200;
+  font-weight: 500;
+  color: $ink-2;
+  margin-bottom: $sp-1;
+}
+
+.form-control, .form-select {
+  min-height: $tap-min;
+  font-size: $fs-300;
+  background: $surface;
+  color: $ink;
+
+  &::placeholder { color: $ink-3; opacity: 1; }
+
+  // aria-invalid drives the styling, so the visual and the assistive-tech
+  // states can never disagree.
+  &[aria-invalid='true'] {
+    border-color: $danger;
+    &:focus { border-color: $danger; box-shadow: 0 0 0 3px rgba($danger, 0.2); }
+  }
+}
+
+.field-error {
+  font-size: $fs-200;
+  color: $danger;
+  margin-top: $sp-1;
+  display: flex;
+  align-items: flex-start;
+  gap: $sp-1;
+}
+
+.field-hint { font-size: $fs-200; color: $ink-3; margin-top: $sp-1; }
+
+// Cards / surfaces -----------------------------------------------------------
+.surface {
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: $radius-lg;
+}
+
+.eyebrow {
+  font-size: $fs-100;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: $ink-3;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $sp-1;
+  padding: 0.125rem $sp-2;
+  border-radius: $radius-sm;
+  font-size: $fs-100;
+  font-weight: 500;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.chip-neutral   { color: $ink-2;     background: $sunken;  border-color: $line; }
+.chip-verified  { color: $verified;  background: #e9f4f0; border-color: #cde6dd; }
+.chip-estimated { color: $estimated; background: $sunken;  border-color: $line; }
+.chip-warn      { color: $warn;      background: #fbf0e9; border-color: #f0dccb; }
+
+// DRIP dots carry the fill colour; any text beside them uses the -text variant.
+.drip-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.drip-dot--delegation  { background: $drip-delegation; }
+.drip-dot--replacement { background: $drip-replacement; }
+.drip-dot--investment  { background: $drip-investment; }
+.drip-dot--production  { background: $drip-production; }
+
+// App shell ------------------------------------------------------------------
+.app-shell { min-height: 100vh; display: flex; background: $ground; }
+
+.app-sidebar {
+  width: 236px;
+  flex: 0 0 236px;
+  background: $ink;
+  color: $ink-inverse;
+  display: flex;
+  flex-direction: column;
+
+  a { color: #a8a093; text-decoration: none; }        // 6.85:1 on $ink
+  a:hover, a:focus-visible { color: $ink-inverse; }
+  a[aria-current='page'] { color: $ink-inverse; background: #2a2621; font-weight: 600; }
+}
+
+@media (max-width: 991.98px) {
+  .app-sidebar { display: none; }
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: $sp-5 $sp-4;   // 16px side gutter on a phone
+  background: $ground;
+}
+
+.auth-card { width: 100%; max-width: 27rem; }
+
+// Utility --------------------------------------------------------------------
+.stack   { display: flex; flex-direction: column; }
+.gap-1-5 { gap: 0.375rem; }
+.max-ch  { max-width: 68ch; }   // a comfortable measure for body copy

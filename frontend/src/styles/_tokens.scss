@@ -1,0 +1,65 @@
+// ---------------------------------------------------------------------------
+// Design tokens. Every value here was checked against WCAG with
+// scripts/contrast.mjs — the ratios in the comments are measured, not guessed.
+// ---------------------------------------------------------------------------
+
+// Surfaces ------------------------------------------------------------------
+$ground:        #faf8f4;   // page
+$surface:       #ffffff;   // cards
+$sunken:        #f4f1ea;   // wells, inactive tabs
+$line:          #e4dfd4;   // hairlines
+$line-strong:   #d3ccbd;   // input borders, dividers that must be seen
+
+// Ink -----------------------------------------------------------------------
+$ink:           #1a1815;   // 16.70:1 on ground
+$ink-2:         #5c564a;   //  6.86:1 on ground
+$ink-3:         #6e6659;   //  5.34:1 on ground — the lightest text allowed
+$ink-inverse:   #faf8f4;   // 16.70:1 on $ink
+
+// Semantic ------------------------------------------------------------------
+$verified:      #0f6b57;   //  6.07:1 — measured savings, success, focus ring
+$estimated:     #787264;   //  4.78:1 — projections. Never styled like verified.
+$warn:          #b4541f;   //  4.68:1 — attention, cost
+$danger:        #a3231f;   // destructive + form errors
+
+// DRIP quadrants. Fills are the validated categorical palette (worst-pair CVD
+// ΔE 9.2, normal-vision ΔE 16.3). Text variants are darkened to clear 4.5:1.
+$drip-delegation:       #eb6834;  $drip-delegation-text:  #b75129;
+$drip-replacement:      #4a3aa7;  $drip-replacement-text: #4a3aa7;
+$drip-investment:       #2a78d6;  $drip-investment-text:  #2771c9;
+$drip-production:       #1baf7a;  $drip-production-text:  #14815a;
+
+// Typography ----------------------------------------------------------------
+$font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+$font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+$font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+// A 1.25-ish scale on a 16px base. Nothing below 12px ships, and 12px is for
+// captions only — never body copy.
+$fs-100: 0.75rem;    // 12px  caption
+$fs-200: 0.8125rem;  // 13px  secondary UI
+$fs-300: 0.875rem;   // 14px  UI default
+$fs-400: 1rem;       // 16px  body
+$fs-500: 1.125rem;   // 18px  lead
+$fs-600: 1.375rem;   // 22px  h3
+$fs-700: 1.75rem;    // 28px  h2
+$fs-800: 2.25rem;    // 36px  h1
+$fs-900: 2.75rem;    // 44px  display
+
+$lh-tight: 1.15;
+$lh-snug:  1.35;
+$lh-body:  1.6;
+
+// Space: a 4px base, used as a ladder rather than ad-hoc values.
+$sp-1: 0.25rem; $sp-2: 0.5rem;  $sp-3: 0.75rem; $sp-4: 1rem;
+$sp-5: 1.5rem;  $sp-6: 2rem;    $sp-7: 3rem;    $sp-8: 4rem;
+
+$radius-sm: 6px; $radius: 9px; $radius-lg: 12px; $radius-pill: 999px;
+
+$shadow-sm: 0 1px 2px rgba(26, 24, 21, 0.06);
+$shadow:    0 2px 8px rgba(26, 24, 21, 0.08);
+$shadow-lg: 0 18px 44px rgba(26, 24, 21, 0.18);
+
+// The smallest a pointer target ever gets. WCAG 2.2 target size is 24px;
+// 44px is the Apple/Material guidance and what this product uses.
+$tap-min: 44px;

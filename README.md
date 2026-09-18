@@ -7,8 +7,16 @@ ReclaimOS finds the work consuming a founder's time, calculates its cost,
 creates a plan to eliminate, automate, or delegate it, and helps the team
 execute the replacement — then measures how much time actually came back.
 
-> **Status: design phase.** No application code yet. `docs/` is the
-> specification the implementation will be written against.
+> **Status: phases 0–1 built.** Authentication, workspaces, memberships, the
+> onboarding wizard and the design system are implemented and tested. The audit,
+> sort, advisor and measurement features are specified in `docs/` but not yet
+> written — see [`SETUP.md`](SETUP.md) to run what exists.
+
+```
+backend/    Node 20 · Express · MongoDB · Mongoose · Zod · Vitest
+frontend/   React 18 · Vite · Bootstrap 5 · TanStack Query · react-hook-form
+docs/       the specification both were built against
+```
 
 ## The loop
 
