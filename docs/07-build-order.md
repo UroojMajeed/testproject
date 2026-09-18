@@ -1,5 +1,7 @@
 # ReclaimOS — Build Order
 
+> **Phase order superseded by [`08-entry-path-revision.md`](08-entry-path-revision.md).** Calendar import moves to phase 2, playbooks leave the MVP, and the timer moves after the sort. The MVP definition of done and the risk table below still apply.
+
 The MVP proves exactly one thing: **can a founder discover and actually reclaim
 time?** Everything that doesn't serve that question waits.
 

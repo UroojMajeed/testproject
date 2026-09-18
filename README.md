@@ -34,6 +34,7 @@ Redis + BullMQ · Claude API
 | [`docs/05-api-contract.md`](docs/05-api-contract.md) | REST endpoints, envelope, error codes |
 | [`docs/06-ai-layer.md`](docs/06-ai-layer.md) | Orchestrator, prompts, guardrails, cost control |
 | [`docs/07-build-order.md`](docs/07-build-order.md) | 12 phases, MVP definition of done, risks |
+| [`docs/08-entry-path-revision.md`](docs/08-entry-path-revision.md) | **Calendar-first entry path** — supersedes onboarding + phase order |
 
 ## Core product rules
 
@@ -47,3 +48,5 @@ Redis + BullMQ · Claude API
    the user.
 5. **The buyback rate is a planning estimate**, labelled as such everywhere —
    never presented as a wage or a valuation.
+6. **First value lands in the first session.** The calendar sort replaces the
+   fourteen-day audit as the front door; the timer is optional precision.

@@ -14,7 +14,9 @@
 | 6 | `/reset-password/:token` | Reset password | Auth | public | ✔ |
 | 7 | `/verify-email/:token` | Verify email | Auth | public | |
 | 8 | `/invite/:token` | Accept invitation | Auth | public | |
-| 9 | `/onboarding/:step` | Onboarding wizard (6 steps) | Onboarding | auth | ✔ |
+| 9 | `/onboarding/:step` | Onboarding wizard (3 steps) | Onboarding | auth | ✔ |
+| 9a | `/onboarding/sort` | **The Sort** — classify last week by group | Onboarding | auth | ✔ |
+| 9b | `/onboarding/first-look` | **Your week** — matrix, cost, first move | Onboarding | auth | ✔ |
 | 10 | `/app` | Dashboard | App | member+ | ✔ |
 | 11 | `/app/audit` | Time Audit | App | member+ | ✔ |
 | 12 | `/app/audit/import` | Calendar import review | App | member+ | |
@@ -80,6 +82,8 @@ Centered card, product mark, split-panel on ≥lg with a value-prop illustration
 
 ## 3. Onboarding wizard `/onboarding/:step` **[MVP]**
 
+> **Superseded by [`08-entry-path-revision.md`](08-entry-path-revision.md).** The calendar-first entry path replaces the 6-step wizard and the 14-day manual audit as the front door. Kept here as the original design.
+
 Six steps, progress rail, resumable (server stores `onboarding.step`),
 skippable steps clearly marked *Skip for now*.
 
@@ -136,6 +140,8 @@ Pending approvals · Goals progress.
 stat cards to a new user.
 
 ## 5. Time Audit `/app/audit` **[MVP]**
+
+> **No longer the front door** — see [`08-entry-path-revision.md`](08-entry-path-revision.md). The timer is optional precision for people who want it; the calendar sort is how a week gets classified. Everything below still stands for the timer itself.
 
 The data-entry engine. Everything downstream depends on it, so friction here is
 the #1 product risk.
