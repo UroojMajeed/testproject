@@ -4,7 +4,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 3000,
+    // Without this Vite quietly falls back to 3001 when 3000 is taken, which
+    // then fails CORS against the backend's CLIENT_URL for no visible reason.
+    strictPort: true,
     proxy: {
       // Keeps the browser same-origin in development, so the refresh cookie
       // behaves exactly as it will in production behind one domain.

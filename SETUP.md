@@ -5,7 +5,7 @@ Two applications, two folders, no shared build step.
 ```
 reclaimos/
 ├── backend/     Node + Express + MongoDB API   → http://localhost:5000
-├── frontend/    React + Vite + Bootstrap SPA   → http://localhost:5173
+├── frontend/    React + Vite + Bootstrap SPA   → http://localhost:3000
 └── docs/        the specification this was built against
 ```
 
@@ -44,13 +44,26 @@ exactly as it will in production.
 
 ## 4. Run
 
+Two processes, two terminals. That is deliberate — you want to see each one's
+log separately, and restart one without touching the other.
+
 ```bash
 npm run db:up          # or start your own mongod
-npm run dev:backend    # terminal 1
-npm run dev:frontend   # terminal 2
+npm run dev:backend    # terminal 1  → http://localhost:5000
+npm run dev:frontend   # terminal 2  → http://localhost:3000
 ```
 
-Open http://localhost:5173.
+Open http://localhost:3000.
+
+### In VS Code
+
+Open `reclaimos.code-workspace` (File → Open Workspace from File). You get
+three folders in the sidebar — root, backend, frontend — each with its own
+search scope and its own terminal cwd.
+
+- **Ctrl+Shift+B** runs both dev servers in split terminals
+- **Ctrl+Shift+P → Tasks: Run Task** also offers `seed demo data` and `verify`
+- **F5** → *Debug backend* runs the API with breakpoints; *Debug both* adds Chrome
 
 ## 5. Verify
 

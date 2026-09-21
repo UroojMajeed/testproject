@@ -46,8 +46,8 @@ describe('security headers', () => {
 
 describe('cors', () => {
   it('allows the configured client origin with credentials', async () => {
-    const res = await api().get('/api/v1/health').set('Origin', 'http://localhost:5173');
-    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    const res = await api().get('/api/v1/health').set('Origin', 'http://localhost:3000');
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
     expect(res.headers['access-control-allow-credentials']).toBe('true');
   });
 
