@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { envSchema, databaseNameWarning } from '../../src/config/env.js';
+import {
+  envSchema, databaseNameWarning, databaseNameFrom, DEFAULT_DB_NAME,
+} from '../../src/config/env.js';
 
 const valid = {
   MONGODB_URI: 'mongodb://127.0.0.1:27017/reclaimos',
@@ -79,11 +81,33 @@ describe('defaults', () => {
   });
 });
 
+describe('databaseNameFrom', () => {
+  it.each([
+    ['mongodb://127.0.0.1:27017/reclaimos', 'reclaimos'],
+    ['mongodb+srv://u:p@c.abc.mongodb.net/reclaimos?retryWrites=true', 'reclaimos'],
+    ['mongodb://a:27017,b:27017/mydb?replicaSet=rs0', 'mydb'],
+  ])('reads the database out of %s', (uri, expected) => {
+    expect(databaseNameFrom(uri)).toBe(expected);
+  });
+
+  it.each([
+    'mongodb+srv://u:p@c.abc.mongodb.net/?retryWrites=true',
+    'mongodb+srv://u:p@c.abc.mongodb.net/?appName=ReclaimOS',
+    'mongodb://127.0.0.1:27017',
+  ])('returns null when %s names none', (uri) => {
+    expect(databaseNameFrom(uri)).toBeNull();
+  });
+});
+
 describe('databaseNameWarning', () => {
   it('warns when the connection string names no database', () => {
-    expect(databaseNameWarning('mongodb+srv://u:p@c.abc.mongodb.net/?retryWrites=true'))
-      .toMatch(/no database name/);
-    expect(databaseNameWarning('mongodb://127.0.0.1:27017')).toMatch(/no database name/);
+    // This is the exact shape Atlas hands you from Connect -> Drivers.
+    expect(databaseNameWarning('mongodb+srv://u:p@c.abc.mongodb.net/?appName=ReclaimOS'))
+      .toMatch(/names no database/);
+  });
+
+  it('names the fallback that will actually be used', () => {
+    expect(databaseNameWarning('mongodb://127.0.0.1:27017')).toContain(DEFAULT_DB_NAME);
   });
 
   it('stays quiet when a database is named', () => {

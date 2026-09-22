@@ -60,17 +60,27 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
-/**
- * Not fatal, but worth saying out loud: a connection string with no database
- * name silently writes everything to a database called "test", which is
- * bewildering the first time you go looking for your data.
- */
-export function databaseNameWarning(uri = '') {
+/** The database a connection string names, or null when it names none. */
+export function databaseNameFrom(uri = '') {
   const afterHost = uri.replace(/^mongodb(\+srv)?:\/\/[^/]+/, '');
   const dbName = afterHost.split('?')[0].replace(/^\//, '');
-  if (dbName) return null;
-  return 'MONGODB_URI has no database name, so Mongo will use "test". Add one '
-    + 'before the "?" — for example .mongodb.net/reclaimos?retryWrites=true';
+  return dbName || null;
+}
+
+/** Used when the connection string names no database. */
+export const DEFAULT_DB_NAME = 'reclaimos';
+
+/**
+ * Not fatal — connectDb falls back to DEFAULT_DB_NAME — but worth saying out
+ * loud, because a string with no database name would otherwise put everything
+ * in a database called "test", which is bewildering the first time you go
+ * looking for your data.
+ */
+export function databaseNameWarning(uri = '') {
+  if (databaseNameFrom(uri)) return null;
+  return `MONGODB_URI names no database, so "${DEFAULT_DB_NAME}" will be used. `
+    + 'To be explicit, add it before the "?" — for example '
+    + '.mongodb.net/reclaimos?retryWrites=true';
 }
 
 const parsed = envSchema.safeParse(process.env);
