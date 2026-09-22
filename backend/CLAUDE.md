@@ -36,6 +36,14 @@ parameterised one. `/tasks/queue/delegation` has to be registered above
 `/tasks/:id` or `:id` swallows the word "queue". `tests/unit/routes.test.js`
 asserts this — it caught the bug once already.
 
+## Diagnosing a connection
+
+`npm run db:check` is the first thing to run when Mongo will not connect. It
+distinguishes the four real causes — DNS/SRV, credentials, IP allowlist,
+unresolvable host — instead of leaving a driver stack trace to interpret. Its
+`diagnose` function is exported and unit-tested per branch; add a branch there
+rather than teaching people to read stack traces.
+
 ## Tests
 
 - `npm test` — unit tests, no database, run anywhere

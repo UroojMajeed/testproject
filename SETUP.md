@@ -42,6 +42,17 @@ The frontend needs no configuration. Vite proxies `/api` to the backend, which
 keeps the browser same-origin in development so the refresh cookie behaves
 exactly as it will in production.
 
+## 3a. Check the connection before anything else
+
+```bash
+npm run db:check
+```
+
+It prints the host, the database it will use, whether the SRV lookup resolved,
+and then either `CONNECTED` with the server version, or the one thing that went
+wrong and what to do about it. The password is masked, so the output is safe to
+paste when asking for help.
+
 ## 4. Run
 
 Two processes, two terminals. That is deliberate — you want to see each one's
