@@ -71,13 +71,42 @@ break the Origin check on the auth routes with no obvious cause.
 ## Before saying a change is done
 
 ```bash
-npm run verify              # lint + 222 unit tests + production build
+npm run verify              # lint + 246 unit tests + production build
 npm run test:integration    # backend only; needs a running mongod
 ```
 
 The integration suite spins up an in-memory MongoDB, or uses a live one if you
 set `MONGODB_TEST_URI`. Point it at a throwaway database — it drops the database
 when it finishes.
+
+## Browser tests
+
+One extra step first, because it downloads a browser (~130MB, once):
+
+```bash
+npm --prefix frontend exec playwright install chromium
+npm run e2e
+```
+
+64 tests: the whole login module driven through a real Chromium, on a desktop
+viewport and a phone one. They start Vite themselves, so there is nothing to have
+running first.
+
+They exist because jsdom cannot see a stylesheet, and two real bugs got past a
+fully green unit suite — a focus ring Bootstrap was overriding at zero width, and
+a button at 4.37:1 contrast. Both needed a browser computing styles to find. The
+suite now measures contrast, focus rings, tap targets and horizontal overflow from
+what the browser actually rendered.
+
+**What they do not prove.** They answer the API themselves, in the same envelope
+the real one uses, so they run with nothing but the frontend installed. That
+checks the client against the contract, not the server against it —
+`npm run test:integration` is the other half. If the two ever disagree, both can be
+green and the app still broken, which is why `CLAUDE.md` names the four files that
+have to agree.
+
+`npm run e2e` is not part of `verify` for that download's sake. Add `-- --ui` for
+the interactive runner, or `-- --project=mobile` for one viewport.
 
 ## Useful to know
 

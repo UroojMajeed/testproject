@@ -27,7 +27,7 @@ const noBrowserStorage = {
 };
 
 export default [
-  { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'playwright-report/**', 'test-results/**'] },
   js.configs.recommended,
   {
     files: ['src/**/*.{js,jsx}'],
@@ -66,6 +66,20 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       eqeqeq: ['error', 'smart'],
       'prefer-const': 'error',
+    },
+  },
+  {
+    /**
+     * Browser tests. They run in Node, not in the page — the only browser globals
+     * they touch are inside evaluate() callbacks, which are serialised and run in
+     * Chromium, so the linter is right that they are not defined here. Declaring
+     * both keeps it quiet without turning no-undef off.
+     */
+    files: ['e2e/**/*.js', 'playwright.config.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.browser },
     },
   },
   {

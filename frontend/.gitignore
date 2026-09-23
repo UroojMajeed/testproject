@@ -6,3 +6,9 @@ coverage/
 !.env.example
 *.log
 .vite/
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+.playwright/
