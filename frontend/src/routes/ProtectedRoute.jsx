@@ -19,11 +19,14 @@ export function ProtectedRoute() {
   return <Outlet />;
 }
 
-/** The mirror image: keeps a signed-in user off the sign-in and sign-up screens. */
+/**
+ * The mirror image: keeps a signed-in user off the sign-in and sign-up forms,
+ * which for them are dead ends. The landing page is not behind this — see App.jsx.
+ */
 export function GuestRoute() {
   const { status, isAuthenticated } = useAuth();
 
   if (status === 'loading') return <FullPageSpinner label="Checking your session" />;
-  if (isAuthenticated) return <Navigate to={paths.home} replace />;
+  if (isAuthenticated) return <Navigate to={paths.app} replace />;
   return <Outlet />;
 }

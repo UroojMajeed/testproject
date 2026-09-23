@@ -17,7 +17,7 @@ const Tree = () => (
       <Route path={paths.login} element={<h1>Sign in</h1>} />
     </Route>
     <Route element={<ProtectedRoute />}>
-      <Route path={paths.home} element={<h1>Signed in area</h1>} />
+      <Route path={paths.app} element={<h1>Signed in area</h1>} />
       <Route path="/settings" element={<h1>Settings</h1>} />
     </Route>
   </Routes>
@@ -26,7 +26,7 @@ const Tree = () => (
 describe('the route guards', () => {
   it('sends a signed-out visitor to sign in', async () => {
     mockApi(bootSignedOut);
-    await renderWithProviders(<Tree />, { route: paths.home });
+    await renderWithProviders(<Tree />, { route: paths.app });
 
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
   });
@@ -41,7 +41,7 @@ describe('the route guards', () => {
    */
   it('restores a session from the refresh cookie rather than assuming signed out', async () => {
     mockApi({ [REFRESH]: success({ accessToken: 'fresh', user: { id: 'u1', name: 'Urooj' } }) });
-    await renderWithProviders(<Tree />, { route: paths.home });
+    await renderWithProviders(<Tree />, { route: paths.app });
 
     expect(screen.getByRole('heading', { name: /signed in area/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /sign in/i })).not.toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('the route guards', () => {
   it('says something while it is still deciding, instead of rendering nothing', async () => {
     // A refresh that never resolves: the tree must show a status, not a blank page.
     mockApi({ [REFRESH]: () => new Promise(() => {}) });
-    await renderWithProviders(<Tree />, { route: paths.home });
+    await renderWithProviders(<Tree />, { route: paths.app });
 
     expect(screen.getByRole('status')).toHaveTextContent(/checking your session/i);
   });
@@ -82,7 +82,7 @@ describe('the round trip through sign in', () => {
           <Route path={paths.login} element={<LoginPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
-          <Route path={paths.home} element={<h1>Home</h1>} />
+          <Route path={paths.app} element={<h1>Home</h1>} />
           <Route path="/settings" element={<h1>Settings</h1>} />
         </Route>
       </Routes>,

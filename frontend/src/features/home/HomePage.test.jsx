@@ -67,3 +67,13 @@ describe('the signed-in home page', () => {
     await waitFor(() => expect(getAccessToken()).toBeNull());
   });
 });
+
+describe('getting back out', () => {
+  it('offers a way back to the front page', async () => {
+    await renderHome();
+
+    // Without this the only route out of the signed-in area is the address bar,
+    // which is not a route.
+    expect(screen.getByRole('link', { name: /reclaimos/i })).toHaveAttribute('href', '/');
+  });
+});

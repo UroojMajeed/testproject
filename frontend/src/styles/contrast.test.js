@@ -50,8 +50,11 @@ describe('text on a background — 4.5:1', () => {
     ['ink', 'surface'],
     ['ink', 'page'],
     ['ink', 'surface-sunken'],
+    // ink-muted doubles as Bootstrap's $secondary, so these two rows are also the
+    // outline button's text on both backgrounds it appears against.
     ['ink-muted', 'surface'],
     ['ink-muted', 'page'],
+    ['ink-muted', 'surface-sunken'],
     ['ink-placeholder', 'surface'],
     ['brand-text', 'surface'],
     ['brand-text', 'page'],
@@ -71,9 +74,11 @@ describe('text on a background — 4.5:1', () => {
 });
 
 describe('white text on a filled control — 4.5:1', () => {
-  it.each([['brand'], ['brand-hover'], ['brand-active'], ['danger'], ['success']])(
+  it.each([['brand'], ['brand-hover'], ['brand-active'], ['danger'], ['success'], ['ink-muted']])(
     'white on $%s',
     (fill) => {
+      // ink-muted is included because a secondary outline button fills with it on
+      // hover and puts white text on top.
       expect(contrast(WHITE, tokens[fill])).toBeGreaterThanOrEqual(4.5);
     },
   );

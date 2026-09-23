@@ -83,6 +83,31 @@ describe('the compiled stylesheet', () => {
     // The single-band version is invisible against a filled control. If this
     // selector loses its second colour stop, keyboard focus stops being locatable
     // on the primary button, which no visual test would catch.
-    expect(compiled).toMatch(/:focus-visible\s*\{[^}]*box-shadow:[^;]*var\(--surface\)[^;]*var\(--focus\)/);
+    expect(compiled).toMatch(/:focus-visible[^{]*\{[^}]*box-shadow:[^;]*var\(--surface\)[^;]*var\(--focus\)/);
+  });
+
+  /**
+   * This one is here because of a bug that got all the way to the browser.
+   *
+   * Bootstrap ships `.btn:focus-visible` at specificity 0,2,0, so a bare
+   * `:focus-visible` rule of ours never applied to a button — focus on the primary
+   * call to action drew Bootstrap's ring at the zero width we had configured, and
+   * was invisible. Every token was correct and every other test passed; it took
+   * loading the page and reading the computed style to find it.
+   *
+   * So assert on the cascade, not just on the presence of a rule: of the rules that
+   * can style a focused button, ours has to be the last one.
+   */
+  it('wins the cascade against Bootstrap on a focused button', () => {
+    const ruleFor = (selector) => {
+      const rules = [...compiled.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+        .filter(([, sel]) => sel.split(',').some((s) => s.trim() === selector));
+      return rules.at(-1)?.[2] ?? '';
+    };
+
+    const winner = ruleFor('.btn:focus-visible');
+    expect(winner).toContain('var(--focus)');
+    // Bootstrap's own ring variable must not be the one that lands last.
+    expect(winner).not.toContain('--bs-btn-focus-box-shadow');
   });
 });

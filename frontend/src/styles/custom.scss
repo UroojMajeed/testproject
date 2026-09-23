@@ -12,6 +12,11 @@
 $primary:   t.$brand;
 $danger:    t.$danger;
 $success:   t.$success;
+// Bootstrap's own $secondary is #6c757d, which is 4.37:1 on our page grey — just
+// under AA, and it was reaching the screen on every outline button because we had
+// never overridden it. Our muted ink is 5.60:1 on the page and 6.00:1 on white,
+// and white on it is 6.00:1 for the filled hover state.
+$secondary: t.$ink-muted;
 $body-bg:   t.$page;
 $body-color: t.$ink;
 
@@ -95,7 +100,23 @@ body {
 // whatever is behind it. A single ring is invisible on one side or the other as
 // soon as the control is filled — this is legible on white, on the page grey and
 // on a brand-blue button alike, all three measured in contrast.test.js.
-:focus-visible {
+//
+// The component selectors are not redundant. Bootstrap ships `.btn:focus-visible`
+// at specificity 0,2,0, which beats a bare `:focus-visible` at 0,1,0 — so setting
+// $input-btn-focus-width to 0 above did not remove Bootstrap's ring, it drew it at
+// zero width and still won the cascade. Focus on a button became invisible, which
+// no unit test caught because the tokens were all correct; it took loading the page
+// and reading the computed style. Matching Bootstrap's specificity, later in the
+// file, is what makes ours apply.
+:focus-visible,
+.btn:focus-visible,
+.btn-close:focus-visible,
+.form-control:focus-visible,
+.form-control:focus,
+.form-select:focus-visible,
+.form-select:focus,
+.form-check-input:focus-visible,
+a:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus);
 }
@@ -191,6 +212,10 @@ body {
   padding: var(--space-6) var(--space-5);
 }
 
+.auth-card__mark {
+  margin-bottom: var(--space-5);
+}
+
 .auth-card__title {
   font-size: var(--text-2xl);
   margin-bottom: var(--space-2);
@@ -211,6 +236,178 @@ body {
 
 a {
   color: var(--brand-text);
+}
+
+// ── The landing page ────────────────────────────────────────────────────────
+//
+// One column, a max width measured in characters rather than pixels, and the
+// sections separated by space instead of rules. Nothing here is a grid framework:
+// the page is a hero and two blocks, and a grid would be more machinery than that
+// deserves.
+
+.logo {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.landing {
+  // A page background rather than white, so the panel and cards below read as
+  // raised without needing a border on every one of them.
+  background: var(--page);
+  min-height: 100vh;
+}
+
+.landing__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4);
+}
+
+.landing__nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.landing__hero {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4) var(--space-6);
+}
+
+.landing__headline {
+  font-family: var(--font-serif);
+  font-size: var(--text-display);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  // Roughly 30 characters a line at the widest. Past about 75 the eye loses its
+  // place returning to the left margin, and a headline is where that shows most.
+  max-width: 34ch;
+  margin-bottom: var(--space-4);
+}
+
+.landing__lede {
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+  max-width: 60ch;
+  margin-bottom: var(--space-5);
+}
+
+.landing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.landing__note {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.landing__section {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.landing__eyebrow {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: var(--space-5);
+}
+
+.landing__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-4);
+  // Four across on a desk, two on a tablet, one on a phone — decided by the
+  // available width rather than by a guess at what device is holding it.
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.landing__step {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.landing__step-number {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: var(--text-sm);
+  // Lining figures line up in a column; the default in some faces does not.
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--brand-text);
+  margin-bottom: var(--space-2);
+}
+
+.landing__step-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.landing__step-body {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+.landing__panel {
+  background: var(--brand-wash);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.landing__panel-title {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+}
+
+.landing__panel-body {
+  color: var(--ink-muted);
+  max-width: 62ch;
+  margin-bottom: var(--space-4);
+}
+
+.landing__footer {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-7);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+// btn-link inherits Bootstrap's link colour, which is the brand fill rather than
+// the darker text variant — 6.64:1 as a background, but not as text on grey.
+.btn-link {
+  color: var(--brand-text);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--brand-active);
+    text-decoration: underline;
+  }
 }
 
 // Nothing moves for anyone who has asked for less movement.

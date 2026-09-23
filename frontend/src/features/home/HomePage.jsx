@@ -1,5 +1,6 @@
 import { useAuth } from '../../context/useAuth.js';
 import { formatDate } from '../../lib/formatters.js';
+import { Logo } from '../../components/ui/Logo.jsx';
 
 /**
  * Deliberately almost empty.
@@ -12,7 +13,11 @@ export default function HomePage() {
   const { user, logout } = useAuth();
 
   return (
-    <main className="container py-5" style={{ maxWidth: '44rem' }}>
+    <main id="main" tabIndex={-1} className="container py-5" style={{ maxWidth: '44rem' }}>
+      {/* A way back to the front page. Without it the only route out of the signed-in
+          area is the browser's address bar, which is not a route. */}
+      <p className="mb-5"><Logo /></p>
+
       <header className="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-5">
         <div>
           <h1 style={{ fontSize: 'var(--text-2xl)' }}>Hello, {user?.name}</h1>

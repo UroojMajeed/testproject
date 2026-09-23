@@ -47,6 +47,10 @@ $border-subtle:   #dfe3ea;  // decorative only, never the edge of a control
 
 // ── Type ────────────────────────────────────────────────────────────────────
 $font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+// A system serif for the wordmark and the headline. Deliberately not a webfont:
+// a display face is the one thing on a landing page you cannot afford to have
+// arrive late, and Georgia-or-equivalent is on every machine that will load this.
+$font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
 $text-xs:    0.8125rem;  // 13px — metadata only, never an input label
 $text-sm:    0.875rem;   // 14px
 $text-base:  1rem;       // 16px body, which also stops iOS zooming on focus
@@ -54,6 +58,9 @@ $text-lg:    1.125rem;
 $text-xl:    1.375rem;
 $text-2xl:   1.75rem;
 $text-3xl:   2.125rem;
+// The hero only. Fluid between 2.25rem and 3.5rem so it never needs a breakpoint
+// and never overflows a 320px screen.
+$text-display: clamp(2.25rem, 6vw, 3.5rem);
 
 $leading-tight:  1.25;
 $leading-normal: 1.55;
@@ -106,6 +113,7 @@ $tap-target: 44px;
   --focus: #{$ink};  // outer band of the two-tone focus ring
 
   --font-sans: #{$font-sans};
+  --font-serif: #{$font-serif};
   --text-xs: #{$text-xs};
   --text-sm: #{$text-sm};
   --text-base: #{$text-base};
@@ -113,6 +121,7 @@ $tap-target: 44px;
   --text-xl: #{$text-xl};
   --text-2xl: #{$text-2xl};
   --text-3xl: #{$text-3xl};
+  --text-display: #{$text-display};
 
   --leading-tight: #{$leading-tight};
   --leading-normal: #{$leading-normal};

@@ -31,7 +31,7 @@ export default function RegisterPage() {
 
   const { pending, formError, run } = useSubmit({
     setError,
-    onSuccess: () => navigate(paths.home, { replace: true }),
+    onSuccess: () => navigate(paths.app, { replace: true }),
   });
 
   const onSubmit = (values) =>

@@ -17,7 +17,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   // Set by ProtectedRoute when it turned someone away. Send them back there.
-  const returnTo = location.state?.from?.pathname ?? paths.home;
+  const returnTo = location.state?.from?.pathname ?? paths.app;
   // Set by ResetPasswordPage, which cannot sign the user in because the reset
   // revoked every session. Without this the redirect looks like a failure.
   const justResetPassword = Boolean(location.state?.passwordReset);
