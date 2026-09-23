@@ -1,145 +1,172 @@
-// Design tokens — the single source of truth for both worlds.
+@use 'sass:map';
+@use 'palette' as p;
+
+// The semantic layer: what a colour is *for*, never what it is.
 //
-// Declared as Sass variables because Bootstrap needs real values at compile time
-// (it does arithmetic on them), then re-emitted as CSS custom properties for our
-// own components. One definition, two consumers; they cannot drift apart.
+// Components name these and only these. The rule sounds bureaucratic until the
+// first theme change, at which point it is the only reason a theme change is a
+// change to this file rather than to forty components.
 //
-// The colour pairs are measured in src/styles/contrast.test.js, which parses this
-// file. Break a ratio and `npm run test` fails, so the palette cannot quietly
-// slide below WCAG AA.
+// Every background has a foreground that is guaranteed to pass on it. That pairing
+// is the contract — reach for `--bg-success-subtle` and `--fg-success-subtle` comes
+// with it, so there is no way to invent an unreadable combination by accident.
+// src/styles/contrast.test.js compiles this file and measures every pair, in both
+// themes, against WCAG AA.
+//
+// The dark theme is not an inversion applied afterwards. Both sets are written here
+// together, which is what stops dark mode becoming the six-month regret it usually is.
 
-// ── Surfaces ────────────────────────────────────────────────────────────────
-$page:            #f6f7f9;  // the app background
-$surface:         #ffffff;  // cards, inputs, menus
-$surface-sunken:  #eef0f4;
+@mixin light {
+  // ── Surfaces, from furthest back to nearest front ─────────────────────────
+  --bg-canvas: #{map.get(p.$ink, 50)};      // the page itself
+  --bg-surface: #{p.$white};                // cards, panels, the auth box
+  --bg-raised: #{p.$white};                 // menus and popovers, above a surface
+  --bg-sunken: #{map.get(p.$ink, 100)};     // inputs and wells, below a surface
 
-// ── Text ────────────────────────────────────────────────────────────────────
-$ink:             #14181f;  // 17.79:1 on surface
-$ink-muted:       #5a6472;  //  6.00:1 on surface — still AA at body size
-$ink-placeholder: #616b7a;  //  5.40:1 — a placeholder is text and must pass too
+  // ── Text, three weights of emphasis, all of them AA ───────────────────────
+  --fg-default: #{map.get(p.$ink, 950)};
+  --fg-muted: #{map.get(p.$ink, 800)};      // secondary copy
+  --fg-subtle: #{map.get(p.$ink, 700)};     // placeholders, captions, metadata
+  --fg-on-solid: #{p.$white};               // on any filled control
 
-// ── Brand ───────────────────────────────────────────────────────────────────
-// Two values, not one. $brand is a fill and only ever carries white text;
-// $brand-text is the darker variant used when the colour *is* the text.
-$brand:           #2f52c8;  // white on it: 6.64:1
-$brand-hover:     #2445ab;
-$brand-active:    #1d3a8f;
-$brand-text:      #2445ab;  // on surface: 8.35:1
-$brand-wash:      #eef2fd;
+  // ── Lines ─────────────────────────────────────────────────────────────────
+  // default is the edge of a control and clears 3:1 — WCAG 1.4.11 applies to it,
+  // which rules out the fashionable near-invisible grey. subtle is decorative and
+  // deliberately does not.
+  --border-default: #{map.get(p.$ink, 600)};
+  --border-subtle: #{map.get(p.$ink, 200)};
+  --border-strong: #{map.get(p.$ink, 800)};
 
-// ── Status ──────────────────────────────────────────────────────────────────
-// Same split. A colour that passes as a background almost never passes as text,
-// which is exactly how well-meant palettes fail an audit.
-$danger:          #b3261e;
-$danger-text:     #a3201a;
-$danger-wash:     #fdeeec;
-$success:         #17643f;
-$success-text:    #12583a;
-$success-wash:    #eaf5ef;
-$warn-text:       #7a4a05;
-$warn-wash:       #fdf3e2;
+  // ── The primary action ────────────────────────────────────────────────────
+  // Ink, not a colour. The rule is "maximum contrast against the canvas", which
+  // makes the main action unmissable and leaves the entire hue wheel free to carry
+  // meaning — the DRIP quadrants, estimated against verified — rather than brand.
+  --action-bg: #{map.get(p.$ink, 900)};
+  --action-bg-hover: #{map.get(p.$ink, 950)};
+  --action-bg-active: #{map.get(p.$ink, 975)};
+  --action-fg: #{p.$white};
 
-// ── Lines ───────────────────────────────────────────────────────────────────
-// 3.63:1 on surface. A 1px input border is a non-text element and WCAG 1.4.11
-// asks for 3:1, which rules out the fashionable near-invisible grey.
-$border:          #7d8797;
-$border-subtle:   #dfe3ea;  // decorative only, never the edge of a control
+  // ── The accent ────────────────────────────────────────────────────────────
+  // One hue, rationed: links, focus, the selected thing. Nothing decorative.
+  --accent-fg: #{map.get(p.$accent, 700)};
+  --accent-fg-hover: #{map.get(p.$accent, 800)};
+  --accent-solid: #{map.get(p.$accent, 700)};
+  --fg-on-accent: #{p.$white};
+  --bg-accent-subtle: #{map.get(p.$accent, 100)};
+  --fg-accent-subtle: #{map.get(p.$accent, 800)};
+  --border-accent: #{map.get(p.$accent, 600)};
 
-// ── Type ────────────────────────────────────────────────────────────────────
-$font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-// A system serif for the wordmark and the headline. Deliberately not a webfont:
-// a display face is the one thing on a landing page you cannot afford to have
-// arrive late, and Georgia-or-equivalent is on every machine that will load this.
-$font-serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
-$text-xs:    0.8125rem;  // 13px — metadata only, never an input label
-$text-sm:    0.875rem;   // 14px
-$text-base:  1rem;       // 16px body, which also stops iOS zooming on focus
-$text-lg:    1.125rem;
-$text-xl:    1.375rem;
-$text-2xl:   1.75rem;
-$text-3xl:   2.125rem;
-// The hero only. Fluid between 2.25rem and 3.5rem so it never needs a breakpoint
-// and never overflows a 320px screen.
-$text-display: clamp(2.25rem, 6vw, 3.5rem);
+  // ── Status ────────────────────────────────────────────────────────────────
+  --fg-success: #{map.get(p.$success, 700)};
+  --bg-success-solid: #{map.get(p.$success, 700)};
+  --fg-on-success: #{p.$white};
+  --bg-success-subtle: #{map.get(p.$success, 100)};
+  --fg-success-subtle: #{map.get(p.$success, 800)};
+  --border-success: #{map.get(p.$success, 600)};
 
-$leading-tight:  1.25;
-$leading-normal: 1.55;
+  --fg-warning: #{map.get(p.$warning, 700)};
+  --bg-warning-solid: #{map.get(p.$warning, 700)};
+  --fg-on-warning: #{p.$white};
+  --bg-warning-subtle: #{map.get(p.$warning, 100)};
+  --fg-warning-subtle: #{map.get(p.$warning, 800)};
+  --border-warning: #{map.get(p.$warning, 600)};
 
-// ── Space ── 4px base, so everything lands on one grid ──────────────────────
-$space-1: 0.25rem;
-$space-2: 0.5rem;
-$space-3: 0.75rem;
-$space-4: 1rem;
-$space-5: 1.5rem;
-$space-6: 2rem;
-$space-7: 3rem;
-$space-8: 4rem;
+  --fg-danger: #{map.get(p.$danger, 700)};
+  --bg-danger-solid: #{map.get(p.$danger, 700)};
+  --fg-on-danger: #{p.$white};
+  --bg-danger-subtle: #{map.get(p.$danger, 100)};
+  --fg-danger-subtle: #{map.get(p.$danger, 800)};
+  --border-danger: #{map.get(p.$danger, 600)};
 
-// ── Shape ───────────────────────────────────────────────────────────────────
-$radius-sm: 6px;
-$radius:    10px;
-$radius-lg: 14px;
+  // ── Focus ─────────────────────────────────────────────────────────────────
+  // Two bands: the halo separates the ring from the control it is on, the ring
+  // reads against whatever is behind. One band alone disappears against a fill.
+  --focus-ring: #{map.get(p.$ink, 950)};
+  --focus-halo: #{p.$white};
 
-// 44px: the smallest comfortable touch target, per WCAG 2.5.5 and every platform
-// guideline that has actually measured a thumb.
-$tap-target: 44px;
+  --shadow-sm: 0 1px 2px rgb(33 29 25 / 6%);
+  --shadow-md: 0 2px 4px rgb(33 29 25 / 4%), 0 6px 16px rgb(33 29 25 / 8%);
+  --shadow-lg: 0 4px 8px rgb(33 29 25 / 4%), 0 16px 40px rgb(33 29 25 / 10%);
 
-:root {
-  --page: #{$page};
-  --surface: #{$surface};
-  --surface-sunken: #{$surface-sunken};
-
-  --ink: #{$ink};
-  --ink-muted: #{$ink-muted};
-  --ink-placeholder: #{$ink-placeholder};
-
-  --brand: #{$brand};
-  --brand-hover: #{$brand-hover};
-  --brand-active: #{$brand-active};
-  --brand-text: #{$brand-text};
-  --brand-wash: #{$brand-wash};
-
-  --danger: #{$danger};
-  --danger-text: #{$danger-text};
-  --danger-wash: #{$danger-wash};
-  --success: #{$success};
-  --success-text: #{$success-text};
-  --success-wash: #{$success-wash};
-  --warn-text: #{$warn-text};
-  --warn-wash: #{$warn-wash};
-
-  --border: #{$border};
-  --border-subtle: #{$border-subtle};
-  --focus: #{$ink};  // outer band of the two-tone focus ring
-
-  --font-sans: #{$font-sans};
-  --font-serif: #{$font-serif};
-  --text-xs: #{$text-xs};
-  --text-sm: #{$text-sm};
-  --text-base: #{$text-base};
-  --text-lg: #{$text-lg};
-  --text-xl: #{$text-xl};
-  --text-2xl: #{$text-2xl};
-  --text-3xl: #{$text-3xl};
-  --text-display: #{$text-display};
-
-  --leading-tight: #{$leading-tight};
-  --leading-normal: #{$leading-normal};
-
-  --space-1: #{$space-1};
-  --space-2: #{$space-2};
-  --space-3: #{$space-3};
-  --space-4: #{$space-4};
-  --space-5: #{$space-5};
-  --space-6: #{$space-6};
-  --space-7: #{$space-7};
-  --space-8: #{$space-8};
-
-  --radius-sm: #{$radius-sm};
-  --radius: #{$radius};
-  --radius-lg: #{$radius-lg};
-  --tap-target: #{$tap-target};
-
-  --shadow-sm: 0 1px 2px rgba(20, 24, 31, 0.06);
-  --shadow: 0 4px 16px rgba(20, 24, 31, 0.08);
+  color-scheme: light;
 }
+
+@mixin dark {
+  // Warm near-black, not #000. Pure black against a bright room is a glare edge,
+  // and every shadow below it has nowhere left to go.
+  --bg-canvas: #{map.get(p.$ink, 975)};
+  --bg-surface: #{map.get(p.$ink, 950)};
+  --bg-raised: #{map.get(p.$ink, 900)};
+  --bg-sunken: #{map.get(p.$ink, 975)};
+
+  --fg-default: #{map.get(p.$ink, 50)};
+  --fg-muted: #{map.get(p.$ink, 400)};
+  --fg-subtle: #{map.get(p.$ink, 500)};
+  --fg-on-solid: #{map.get(p.$ink, 975)};
+
+  --border-default: #{map.get(p.$ink, 600)};
+  --border-subtle: #{map.get(p.$ink, 900)};
+  --border-strong: #{map.get(p.$ink, 400)};
+
+  // The same rule as in the light theme — maximum contrast against the canvas —
+  // which on a dark canvas means the button inverts. That is deliberate: the
+  // primary action is defined by its weight, not by a colour it happens to be.
+  --action-bg: #{map.get(p.$ink, 100)};
+  --action-bg-hover: #{p.$white};
+  --action-bg-active: #{map.get(p.$ink, 300)};
+  --action-fg: #{map.get(p.$ink, 975)};
+
+  --accent-fg: #{map.get(p.$accent, 400)};
+  --accent-fg-hover: #{map.get(p.$accent, 300)};
+  --accent-solid: #{map.get(p.$accent, 400)};
+  --fg-on-accent: #{map.get(p.$accent, 975)};
+  --bg-accent-subtle: #{map.get(p.$accent, 950)};
+  --fg-accent-subtle: #{map.get(p.$accent, 300)};
+  --border-accent: #{map.get(p.$accent, 600)};
+
+  --fg-success: #{map.get(p.$success, 400)};
+  --bg-success-solid: #{map.get(p.$success, 400)};
+  --fg-on-success: #{map.get(p.$success, 975)};
+  --bg-success-subtle: #{map.get(p.$success, 950)};
+  --fg-success-subtle: #{map.get(p.$success, 300)};
+  --border-success: #{map.get(p.$success, 600)};
+
+  --fg-warning: #{map.get(p.$warning, 400)};
+  --bg-warning-solid: #{map.get(p.$warning, 400)};
+  --fg-on-warning: #{map.get(p.$warning, 975)};
+  --bg-warning-subtle: #{map.get(p.$warning, 950)};
+  --fg-warning-subtle: #{map.get(p.$warning, 300)};
+  --border-warning: #{map.get(p.$warning, 600)};
+
+  --fg-danger: #{map.get(p.$danger, 400)};
+  --bg-danger-solid: #{map.get(p.$danger, 400)};
+  --fg-on-danger: #{map.get(p.$danger, 975)};
+  --bg-danger-subtle: #{map.get(p.$danger, 950)};
+  --fg-danger-subtle: #{map.get(p.$danger, 300)};
+  --border-danger: #{map.get(p.$danger, 600)};
+
+  // Inverted from the light theme: the halo is now the dark surface and the ring
+  // the light one, so both bands still read.
+  --focus-ring: #{map.get(p.$ink, 50)};
+  --focus-halo: #{map.get(p.$ink, 975)};
+
+  // Shadows barely register on a dark canvas. Depth there is carried by the
+  // surface steps above, so these are kept faint rather than pretended away.
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 30%), 0 6px 16px rgb(0 0 0 / 45%);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 30%), 0 16px 40px rgb(0 0 0 / 55%);
+
+  color-scheme: dark;
+}
+
+:root { @include light; }
+
+// System preference, unless the reader has explicitly chosen light. The :not()
+// is what lets an in-app toggle override the operating system rather than lose to it.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) { @include dark; }
+}
+
+// An explicit choice always wins, in either direction.
+:root[data-theme='dark'] { @include dark; }
+:root[data-theme='light'] { @include light; }

@@ -32,6 +32,13 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // The dark theme is half the design system and would otherwise be the half
+    // nobody checks. colorScheme flips the media query the tokens key off, so this
+    // is the same suite against the other set of values.
+    {
+      name: 'dark',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 }, colorScheme: 'dark' },
+    },
   ],
 
   /**

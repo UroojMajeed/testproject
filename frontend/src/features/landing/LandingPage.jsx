@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { paths } from '../../routes/paths.js';
 import { Logo } from '../../components/ui/Logo.jsx';
 import { useAuth } from '../../context/useAuth.js';
+import { ThemeToggle } from '../../components/ui/ThemeToggle.jsx';
 
 /**
  * The public front door.
@@ -27,11 +28,12 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
-      <header className="landing__bar">
+      <header className="page-width site-bar">
         {/* Plain, not a link: it would point at this very page. */}
         <Logo as="plain" />
 
-        <nav className="landing__nav" aria-label="Account">
+        <nav className="site-bar__nav" aria-label="Account">
+          <ThemeToggle />
           {isAuthenticated ? (
             <Link to={paths.app} className="btn btn-primary">Go to your account</Link>
           ) : (
@@ -44,7 +46,7 @@ export default function LandingPage() {
       </header>
 
       <main id="main" tabIndex={-1}>
-        <section className="landing__hero" aria-labelledby="hero-heading">
+        <section className="page-width landing__hero" aria-labelledby="hero-heading">
           <h1 id="hero-heading" className="landing__headline">
             Stop spending your best hours on work that someone — or something — else could do.
           </h1>
@@ -67,8 +69,8 @@ export default function LandingPage() {
           <p className="landing__note">Ten minutes to a first result. No two-week tracking period first.</p>
         </section>
 
-        <section id="how" className="landing__section" aria-labelledby="how-heading">
-          <h2 id="how-heading" className="landing__eyebrow">The loop</h2>
+        <section id="how" className="page-width landing__section" aria-labelledby="how-heading">
+          <h2 id="how-heading" className="eyebrow">The loop</h2>
 
           {/* An ordered list because the order is the point — these are four steps. */}
           <ol className="landing__steps">
@@ -82,7 +84,7 @@ export default function LandingPage() {
           </ol>
         </section>
 
-        <section className="landing__section" aria-labelledby="built-heading">
+        <section className="page-width landing__section" aria-labelledby="built-heading">
           <div className="landing__panel">
             <h2 id="built-heading" className="landing__panel-title">What works today</h2>
             <p className="landing__panel-body">
@@ -96,7 +98,7 @@ export default function LandingPage() {
 
       </main>
 
-      <footer className="landing__footer">
+      <footer className="page-width landing__footer">
         <p className="mb-0">
           ReclaimOS — step 1 of the build. Every figure the product shows is computed from your own data.
         </p>

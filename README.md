@@ -71,7 +71,7 @@ break the Origin check on the auth routes with no obvious cause.
 ## Before saying a change is done
 
 ```bash
-npm run verify              # lint + 249 unit tests + production build
+npm run verify              # lint + 317 unit tests + production build
 npm run test:integration    # backend only; needs a running mongod
 ```
 
@@ -83,6 +83,14 @@ Neither suite reads `backend/.env`. `backend/vitest.env.js` supplies its own
 values, so a fresh clone can run the tests before it has an `.env` at all, and a
 test run can never reach your real connection string.
 
+## Design
+
+`frontend/src/styles/README.md` is the reference. The short version: colour scales
+are generated in OKLCH by `npm run palette --prefix frontend`, semantic tokens in
+`_tokens.scss` are the only thing components may name, and the dark theme is a
+remapping of those tokens rather than a second stylesheet. Every foreground/background
+pair is measured against WCAG AA in both themes by `npm test`.
+
 ## Browser tests
 
 One extra step first, because it downloads a browser (~130MB, once):
@@ -92,8 +100,8 @@ npm --prefix frontend exec playwright install chromium
 npm run e2e
 ```
 
-64 tests: the whole login module driven through a real Chromium, on a desktop
-viewport and a phone one. They start Vite themselves, so there is nothing to have
+117 tests: the whole login module driven through a real Chromium, on a desktop
+viewport, a phone one, and again in the dark theme. They start Vite themselves, so there is nothing to have
 running first.
 
 They exist because jsdom cannot see a stylesheet, and two real bugs got past a

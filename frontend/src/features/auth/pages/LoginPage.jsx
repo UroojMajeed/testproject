@@ -75,7 +75,7 @@ export default function LoginPage() {
 
         <SubmitButton pending={pending} pendingLabel="Signing you in…">Sign in</SubmitButton>
 
-        <p className="text-center mt-4 mb-0" style={{ fontSize: 'var(--text-sm)' }}>
+        <p className="text-center mt-4 mb-0 fs-sm">
           <Link to={paths.forgotPassword}>Forgotten your password?</Link>
         </p>
       </form>

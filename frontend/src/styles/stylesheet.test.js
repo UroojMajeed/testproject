@@ -79,11 +79,31 @@ describe('the compiled stylesheet', () => {
     }
   });
 
+  /**
+   * A family name containing a digit — "Source Serif 4 Variable" — is not a valid
+   * CSS identifier unquoted, so a browser discards the entire declaration and falls
+   * back to whatever was inherited. Sass strips quotes when it interpolates, which
+   * is exactly how that happened here: the token compiled, the stylesheet was
+   * valid, nothing failed, and the headline was quietly set in the UI sans. It took
+   * looking at a screenshot to see it.
+   */
+  it('keeps the quotes on font family names', () => {
+    const fontTokens = [...compiled.matchAll(/--font-[a-z]+:\s*([^;]+);/g)].map(([, value]) => value.trim());
+    expect(fontTokens.length).toBeGreaterThanOrEqual(2);
+
+    for (const stack of fontTokens) {
+      const first = stack.split(',')[0].trim();
+      // The webfont is always first and always multi-word, so it always needs them.
+      expect(first, `"${first}" must be quoted or the browser drops the declaration`)
+        .toMatch(/^["'].+["']$/);
+    }
+  });
+
   it('draws the focus ring as two bands rather than one', () => {
     // The single-band version is invisible against a filled control. If this
     // selector loses its second colour stop, keyboard focus stops being locatable
     // on the primary button, which no visual test would catch.
-    expect(compiled).toMatch(/:focus-visible[^{]*\{[^}]*box-shadow:[^;]*var\(--surface\)[^;]*var\(--focus\)/);
+    expect(compiled).toMatch(/:focus-visible[^{]*\{[^}]*box-shadow:[^;]*var\(--focus-halo\)[^;]*var\(--focus-ring\)/);
   });
 
   /**
@@ -106,7 +126,7 @@ describe('the compiled stylesheet', () => {
     };
 
     const winner = ruleFor('.btn:focus-visible');
-    expect(winner).toContain('var(--focus)');
+    expect(winner).toContain('var(--focus-ring)');
     // Bootstrap's own ring variable must not be the one that lands last.
     expect(winner).not.toContain('--bs-btn-focus-box-shadow');
   });

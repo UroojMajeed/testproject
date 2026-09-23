@@ -9,15 +9,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "palette": "node scripts/palette.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src e2e",
+    "lint": "eslint src e2e scripts playwright.config.js",
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
     "@hookform/resolvers": "^3.9.1",
     "@tanstack/react-query": "^5.62.0",
     "bootstrap": "^5.3.3",

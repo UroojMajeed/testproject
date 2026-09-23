@@ -45,7 +45,11 @@ const MEASURE = (node) => {
     own: style.backgroundColor,
     behind: behind ?? 'rgb(255, 255, 255)',
     borderColor: style.borderTopColor,
-    hasBorder: parseFloat(style.borderTopWidth) > 0,
+    // A border only counts if it can be seen. Several controls carry
+    // `1px solid transparent` to reserve the space without drawing an edge, and
+    // measuring those reports rgba(0,0,0,0) as black — which passes on a light
+    // background and fails on a dark one, for an edge nobody can see either way.
+    hasBorder: parseFloat(style.borderTopWidth) > 0 && !isTransparent(style.borderTopColor),
     fontSize: parseFloat(style.fontSize),
     fontWeight: Number(style.fontWeight) || 400,
     height: node.getBoundingClientRect().height,
@@ -81,8 +85,8 @@ test.describe('what the browser actually computes', () => {
     await expectReadable(page.locator('.landing__actions .btn-primary'), 'primary call to action');
     // This is the one that was at 4.37:1, on Bootstrap's untouched $secondary.
     await expectReadable(page.locator('.landing__actions .btn-outline-secondary'), 'secondary call to action');
-    await expectReadable(page.locator('.landing__nav .btn-link'), 'sign-in link');
-    await expectReadable(page.locator('.landing__eyebrow'), 'section eyebrow');
+    await expectReadable(page.locator('.site-bar__nav .btn-link'), 'sign-in link');
+    await expectReadable(page.locator('.eyebrow'), 'section eyebrow');
     await expectReadable(page.locator('.landing__step-number').first(), 'step number');
     await expectReadable(page.locator('.landing__step-body').first(), 'step body');
     await expectReadable(page.locator('.landing__panel-body'), 'panel body');
@@ -237,5 +241,121 @@ test.describe('what the browser actually computes', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText(USER.name);
     await expectReadable(page.locator('h1'), 'greeting');
     await expectReadable(page.getByRole('button', { name: /sign out/i }), 'sign out');
+  });
+});
+
+/**
+ * The theme itself.
+ *
+ * _tokens.scss decides the values and src/styles/contrast.test.js measures them,
+ * but neither can tell you whether the page is actually wearing them. That needs a
+ * browser resolving a media query, which is what the `dark` project supplies.
+ */
+test.describe('theming', () => {
+  test('follows the operating system without being asked', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    const prefersDark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
+    const canvas = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const [r, g, b] = (canvas.match(/\d+/g) ?? []).map(Number);
+    const isDarkCanvas = (r + g + b) / 3 < 96;
+
+    expect(isDarkCanvas, `canvas is ${canvas} while prefers-color-scheme: dark is ${prefersDark}`)
+      .toBe(prefersDark);
+  });
+
+  test('never paints a pure black canvas', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    // #000 against a lit room is a glare edge, and it leaves shadows nowhere to go.
+    const canvas = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(canvas).not.toBe('rgb(0, 0, 0)');
+  });
+
+  test('an explicit choice overrides the system, in both directions', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    const canvasNow = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    const dark = await canvasNow();
+
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    const light = await canvasNow();
+
+    // The :not([data-theme='light']) guard on the media query is what makes the
+    // second of these work on a machine set to dark. Without it the system wins and
+    // the toggle appears broken for exactly the people who most want it.
+    expect(dark).not.toBe(light);
+    const brightness = (c) => (c.match(/\d+/g) ?? []).map(Number).slice(0, 3).reduce((a, n) => a + n, 0);
+    expect(brightness(light)).toBeGreaterThan(brightness(dark));
+  });
+
+  test('the toggle cycles system, light, dark and says which it is on', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    const toggle = page.locator('.theme-toggle');
+    await expect(toggle).toHaveAttribute('data-theme-state', 'system');
+
+    // A three-state cycle, not a switch: "follow my computer" is a real preference
+    // and a two-state toggle throws it away the first time it is pressed.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('data-theme-state', 'light');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('data-theme-state', 'dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('data-theme-state', 'system');
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
+  });
+
+  test('the choice survives a reload', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    await page.locator('.theme-toggle').click();
+    await page.locator('.theme-toggle').click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    await page.reload();
+
+    // Applied before React renders, so there is no flash of the wrong theme.
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(page.locator('.theme-toggle')).toHaveAttribute('data-theme-state', 'dark');
+  });
+
+  test('the toggle is reachable and labelled', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    const toggle = page.getByRole('button', { name: /theme:/i });
+    await expect(toggle).toBeVisible();
+    await expectReadable(toggle, 'theme toggle');
+
+    const box = await toggle.boundingBox();
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.width).toBeGreaterThanOrEqual(44);
+  });
+
+  test('the wordmark is set in the display serif, not the UI sans', async ({ page }) => {
+    await stubApi(page);
+    await page.goto('/');
+
+    // A family name with a digit in it — "Source Serif 4 Variable" — is invalid
+    // unquoted, and a browser drops the whole declaration without complaint. That
+    // shipped once: the stylesheet compiled, every test passed, and the headline was
+    // quietly set in the UI font. Assert on what the browser resolved.
+    const family = await page.locator('.logo').evaluate((el) => getComputedStyle(el).fontFamily);
+    expect(family).toMatch(/Source Serif/);
+
+    const loaded = await page.evaluate(() => document.fonts.check('16px "Source Serif 4 Variable"'));
+    expect(loaded, 'the display serif should actually be loaded, not just requested').toBe(true);
   });
 });

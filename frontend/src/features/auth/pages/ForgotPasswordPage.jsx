@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
           If an account exists for <strong>{getValues('email')}</strong>, a reset link is on its way. It is
           valid for 30 minutes.
         </Alert>
-        <p style={{ color: 'var(--ink-muted)', fontSize: 'var(--text-sm)' }}>
+        <p className="text-subtle fs-sm">
           Nothing arrived? Check the spam folder, then try again — the address may be spelled differently to
           the one on the account.
         </p>

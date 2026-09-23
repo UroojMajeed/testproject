@@ -1,28 +1,57 @@
 // @vitest-environment node
 // No DOM needed, and a node environment gives import.meta.url as a real file URL.
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as sass from 'sass';
 
 /**
- * The palette, measured rather than admired.
+ * The palette, measured rather than admired — in both themes.
  *
- * This parses _tokens.scss, so it tests the values the app actually ships. Nudge a
- * colour a shade lighter because it looks nicer and this fails, which is the whole
- * reason it exists — every "accessible" palette starts accessible.
+ * This compiles the real token file and reads the values that ship, so it cannot
+ * drift from the stylesheet. Nudge a token one step lighter because it looks nicer
+ * and this fails, which is the entire reason it exists: every "accessible" palette
+ * starts accessible.
  *
- * Thresholds are WCAG 2.1 AA: 4.5:1 for body text, 3:1 for a non-text element such
+ * Thresholds are WCAG 2.1 AA — 4.5:1 for body text, 3:1 for a non-text element such
  * as an input border or a focus ring (1.4.11).
+ *
+ * What this cannot see is which CSS rule finally wins on a real element; that took
+ * a browser to catch once already, and lives in e2e/accessibility.spec.js.
  */
 
-const source = readFileSync(fileURLToPath(new URL('./_tokens.scss', import.meta.url)), 'utf8');
+const here = dirname(fileURLToPath(import.meta.url));
 
-/** Sass variable declarations that hold a hex colour. */
-const tokens = Object.fromEntries(
-  [...source.matchAll(/^\$([a-z0-9-]+):\s*(#[0-9a-f]{6});/gim)].map(([, name, hex]) => [name, hex]),
-);
+const compiled = sass.compile(join(here, '_tokens.scss'), {
+  loadPaths: [join(here, '..', '..', 'node_modules')],
+}).css;
 
-const channels = (hex) => hex.slice(1).match(/../g).map((p) => parseInt(p, 16) / 255);
+/**
+ * Pulls the custom properties out of one rule, by the selector that declares it.
+ *
+ * Quotes are stripped before comparing: Sass emits `[data-theme=dark]` for the
+ * `[data-theme='dark']` in the source, and pinning the test to one of those spellings
+ * would make a compiler detail look like a palette failure.
+ */
+const normalise = (selector) => selector.replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+
+function tokensFor(selector) {
+  const rule = [...compiled.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .find(([, sel]) => sel.split(',').some((s) => normalise(s) === normalise(selector)));
+
+  if (!rule) throw new Error(`no rule found for "${selector}" — did the token file move?`);
+
+  return Object.fromEntries(
+    [...rule[2].matchAll(/(--[a-z-]+):\s*(#[0-9a-f]{3,8})/gi)].map(([, name, hex]) => [name, hex]),
+  );
+}
+
+const THEMES = {
+  light: tokensFor(':root'),
+  dark: tokensFor(":root[data-theme='dark']"),
+};
+
+const channels = (hex) => hex.slice(1).match(/../g).map((pair) => parseInt(pair, 16) / 255);
 const linear = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 
 function luminance(hex) {
@@ -35,89 +64,108 @@ function contrast(a, b) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const WHITE = '#ffffff';
+/**
+ * Text that must be legible, and on which surfaces. Every background the app can
+ * put a given foreground on is listed, because "it passes on white" is not an
+ * answer when the element sits on the canvas.
+ */
+const TEXT_PAIRS = [
+  ['--fg-default', '--bg-canvas'], ['--fg-default', '--bg-surface'],
+  ['--fg-default', '--bg-raised'], ['--fg-default', '--bg-sunken'],
+  ['--fg-muted', '--bg-canvas'], ['--fg-muted', '--bg-surface'], ['--fg-muted', '--bg-sunken'],
+  ['--fg-subtle', '--bg-canvas'], ['--fg-subtle', '--bg-surface'], ['--fg-subtle', '--bg-sunken'],
 
-it('found the tokens it is meant to be measuring', () => {
-  // Guards against the regex silently matching nothing after a refactor, which
-  // would make every assertion below pass on an empty set.
-  expect(Object.keys(tokens).length).toBeGreaterThan(15);
-  expect(tokens.ink).toBeDefined();
-  expect(tokens.brand).toBeDefined();
-});
+  ['--accent-fg', '--bg-canvas'], ['--accent-fg', '--bg-surface'], ['--accent-fg', '--bg-sunken'],
+  ['--accent-fg-hover', '--bg-canvas'], ['--accent-fg-hover', '--bg-surface'],
 
-describe('text on a background — 4.5:1', () => {
-  const pairs = [
-    ['ink', 'surface'],
-    ['ink', 'page'],
-    ['ink', 'surface-sunken'],
-    // ink-muted doubles as Bootstrap's $secondary, so these two rows are also the
-    // outline button's text on both backgrounds it appears against.
-    ['ink-muted', 'surface'],
-    ['ink-muted', 'page'],
-    ['ink-muted', 'surface-sunken'],
-    ['ink-placeholder', 'surface'],
-    ['brand-text', 'surface'],
-    ['brand-text', 'page'],
-    ['brand-text', 'brand-wash'],
-    ['danger-text', 'surface'],
-    ['danger-text', 'page'],
-    ['danger-text', 'danger-wash'],
-    ['success-text', 'surface'],
-    ['success-text', 'success-wash'],
-    ['warn-text', 'surface'],
-    ['warn-text', 'warn-wash'],
-  ];
+  ['--fg-success', '--bg-canvas'], ['--fg-success', '--bg-surface'],
+  ['--fg-warning', '--bg-canvas'], ['--fg-warning', '--bg-surface'],
+  ['--fg-danger', '--bg-canvas'], ['--fg-danger', '--bg-surface'],
 
-  it.each(pairs)('$%s on $%s', (fg, bg) => {
-    expect(contrast(tokens[fg], tokens[bg])).toBeGreaterThanOrEqual(4.5);
+  // The paired tokens. Asking for one of these backgrounds hands you its
+  // foreground, so this is the promise that pairing makes.
+  ['--fg-accent-subtle', '--bg-accent-subtle'],
+  ['--fg-success-subtle', '--bg-success-subtle'],
+  ['--fg-warning-subtle', '--bg-warning-subtle'],
+  ['--fg-danger-subtle', '--bg-danger-subtle'],
+
+  // Text on a filled control.
+  ['--action-fg', '--action-bg'], ['--action-fg', '--action-bg-hover'], ['--action-fg', '--action-bg-active'],
+  ['--fg-on-accent', '--accent-solid'],
+  ['--fg-on-success', '--bg-success-solid'],
+  ['--fg-on-warning', '--bg-warning-solid'],
+  ['--fg-on-danger', '--bg-danger-solid'],
+];
+
+/** Non-text: control edges, focus bands, status marks. WCAG 1.4.11, so 3:1. */
+const NON_TEXT_PAIRS = [
+  ['--border-default', '--bg-canvas'], ['--border-default', '--bg-surface'], ['--border-default', '--bg-sunken'],
+  ['--border-strong', '--bg-canvas'], ['--border-strong', '--bg-surface'],
+  ['--border-accent', '--bg-surface'],
+  ['--border-success', '--bg-surface'], ['--border-warning', '--bg-surface'], ['--border-danger', '--bg-surface'],
+
+  // The focus ring is two bands. The halo has to read against the control it sits
+  // on, and the ring against whatever is behind the control.
+  ['--focus-halo', '--action-bg'], ['--focus-halo', '--accent-solid'], ['--focus-halo', '--bg-danger-solid'],
+  ['--focus-ring', '--bg-canvas'], ['--focus-ring', '--bg-surface'], ['--focus-ring', '--focus-halo'],
+];
+
+describe.each(Object.keys(THEMES))('the %s theme', (theme) => {
+  const tokens = THEMES[theme];
+
+  it('defines every token the app asks for', () => {
+    // Guards against the parser silently matching nothing, which would make every
+    // assertion below pass against an empty object.
+    const named = new Set([...TEXT_PAIRS, ...NON_TEXT_PAIRS].flat());
+    const missing = [...named].filter((token) => !tokens[token]);
+
+    expect(missing).toEqual([]);
+    expect(Object.keys(tokens).length).toBeGreaterThan(30);
+  });
+
+  it.each(TEXT_PAIRS)('%s reads on %s', (fg, bg) => {
+    const ratio = contrast(tokens[fg], tokens[bg]);
+    expect(ratio, `${tokens[fg]} on ${tokens[bg]} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(NON_TEXT_PAIRS)('%s is visible against %s', (fg, bg) => {
+    const ratio = contrast(tokens[fg], tokens[bg]);
+    expect(ratio, `${tokens[fg]} on ${tokens[bg]} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(3);
+  });
+
+  it('separates the three text weights enough to be worth having', () => {
+    // If muted and subtle land on the same value the hierarchy is decorative.
+    const [d, m, s] = ['--fg-default', '--fg-muted', '--fg-subtle'].map((t) => luminance(tokens[t]));
+    expect(new Set([d, m, s]).size).toBe(3);
+  });
+
+  it('keeps the primary action the highest-contrast thing on the page', () => {
+    // The rule the action tokens exist to express: the main action is defined by
+    // weight against the canvas, not by a colour it happens to be.
+    const action = contrast(tokens['--action-bg'], tokens['--bg-canvas']);
+    const accent = contrast(tokens['--accent-solid'], tokens['--bg-canvas']);
+    expect(action).toBeGreaterThan(accent);
   });
 });
 
-describe('white text on a filled control — 4.5:1', () => {
-  it.each([['brand'], ['brand-hover'], ['brand-active'], ['danger'], ['success'], ['ink-muted']])(
-    'white on $%s',
-    (fill) => {
-      // ink-muted is included because a secondary outline button fills with it on
-      // hover and puts white text on top.
-      expect(contrast(WHITE, tokens[fill])).toBeGreaterThanOrEqual(4.5);
-    },
-  );
-});
-
-describe('non-text elements — 3:1', () => {
-  it.each([['border', 'surface'], ['border', 'page'], ['border', 'surface-sunken']])(
-    '$%s against $%s, because an input edge you cannot see is not an input edge',
-    (fg, bg) => {
-      expect(contrast(tokens[fg], tokens[bg])).toBeGreaterThanOrEqual(3);
-    },
-  );
-
-  /**
-   * The focus ring is two bands: surface-coloured against the control, then ink
-   * against whatever is behind it. A single ring disappears on one side or the
-   * other the moment the control is filled, so both edges are measured.
-   */
-  it.each([['brand'], ['danger'], ['success']])('focus ring inner band reads against $%s', (fill) => {
-    expect(contrast(tokens.surface, tokens[fill])).toBeGreaterThanOrEqual(3);
+describe('the two themes stay in step', () => {
+  it('define exactly the same token names', () => {
+    // A token that exists in one theme and not the other is a component that will
+    // render with an empty value on half the machines that load it.
+    expect(Object.keys(THEMES.light).sort()).toEqual(Object.keys(THEMES.dark).sort());
   });
 
-  it.each([['surface'], ['page'], ['surface-sunken']])('focus ring outer band reads against $%s', (bg) => {
-    expect(contrast(tokens.ink, tokens[bg])).toBeGreaterThanOrEqual(3);
+  it('are actually different, rather than dark being a copy', () => {
+    expect(THEMES.light['--bg-canvas']).not.toBe(THEMES.dark['--bg-canvas']);
+    expect(luminance(THEMES.light['--bg-canvas'])).toBeGreaterThan(luminance(THEMES.dark['--bg-canvas']));
+    expect(luminance(THEMES.light['--fg-default'])).toBeLessThan(luminance(THEMES.dark['--fg-default']));
   });
-});
 
-describe('the fill and text variants are genuinely different colours', () => {
-  /**
-   * The rule this protects: a colour that passes as a background almost never
-   * passes as text. Collapsing the pair back into one token is the exact mistake
-   * the split exists to prevent, and it looks harmless in a diff.
-   */
-  it.each([
-    ['brand', 'brand-text'],
-    ['danger', 'danger-text'],
-    ['success', 'success-text'],
-  ])('$%s and $%s have not been merged', (fill, text) => {
-    expect(tokens[fill]).not.toBe(tokens[text]);
-    expect(luminance(tokens[text])).toBeLessThan(luminance(tokens[fill]));
+  it('never uses pure black as a dark surface', () => {
+    // #000 against a lit room is a glare edge, and it leaves shadows nowhere to go.
+    for (const token of ['--bg-canvas', '--bg-surface', '--bg-raised']) {
+      expect(THEMES.dark[token]).not.toBe('#000000');
+      expect(luminance(THEMES.dark[token])).toBeGreaterThan(0);
+    }
   });
 });

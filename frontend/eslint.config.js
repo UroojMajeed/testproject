@@ -70,17 +70,34 @@ export default [
   },
   {
     /**
+     * The one file allowed to touch storage, and it is one file rather than a
+     * relaxed rule.
+     *
+     * The ban exists because an access token in storage is readable by any script
+     * that reaches the page and outlives the tab. A theme preference is the
+     * opposite: worthless to an attacker, and useless unless it does outlive the
+     * tab. src/lib/theme.js explains the distinction at more length; anything else
+     * reaching for storage still fails the build.
+     */
+    files: ['src/lib/theme.js'],
+    rules: { 'no-restricted-globals': 'off', 'no-restricted-properties': 'off' },
+  },
+  {
+    /**
      * Browser tests. They run in Node, not in the page — the only browser globals
      * they touch are inside evaluate() callbacks, which are serialised and run in
      * Chromium, so the linter is right that they are not defined here. Declaring
      * both keeps it quiet without turning no-undef off.
      */
-    files: ['e2e/**/*.js', 'playwright.config.js'],
+    files: ['e2e/**/*.js', 'playwright.config.js', 'scripts/**/*.mjs'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
       globals: { ...globals.node, ...globals.browser },
     },
+    // These are command-line tools. Printing what they did is their whole output,
+    // and console.log also degrades gracefully when the reader pipes it into head.
+    rules: { 'no-console': 'off' },
   },
   {
     // Tests legitimately stub fetch and assert on rendered output.
