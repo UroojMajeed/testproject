@@ -71,13 +71,17 @@ break the Origin check on the auth routes with no obvious cause.
 ## Before saying a change is done
 
 ```bash
-npm run verify              # lint + 246 unit tests + production build
+npm run verify              # lint + 249 unit tests + production build
 npm run test:integration    # backend only; needs a running mongod
 ```
 
 The integration suite spins up an in-memory MongoDB, or uses a live one if you
 set `MONGODB_TEST_URI`. Point it at a throwaway database — it drops the database
 when it finishes.
+
+Neither suite reads `backend/.env`. `backend/vitest.env.js` supplies its own
+values, so a fresh clone can run the tests before it has an `.env` at all, and a
+test run can never reach your real connection string.
 
 ## Browser tests
 

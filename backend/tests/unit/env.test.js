@@ -105,3 +105,30 @@ describe('databaseNameWarning', () => {
     expect(databaseNameWarning('mongodb://127.0.0.1:27017/reclaimos')).toBeNull();
   });
 });
+
+describe('the environment the tests themselves run in', () => {
+  /**
+   * These guard the fix for a real failure: the suite used to inherit backend/.env,
+   * so a fresh clone could not run it — config/env.js exits on a missing secret,
+   * and `npm test` died at import before a single test ran — while a machine that
+   * did have a .env was testing against somebody's live connection string.
+   *
+   * vitest.env.js now supplies the values. If that stops being applied, these fail
+   * loudly here rather than as six mystifying import errors.
+   */
+  it('uses the fake secrets from vitest.env.js, never a real .env', () => {
+    expect(process.env.JWT_ACCESS_SECRET).toMatch(/^test-access-secret/);
+    expect(process.env.JWT_REFRESH_SECRET).toMatch(/^test-refresh-secret/);
+    expect(process.env.JWT_ACCESS_SECRET).not.toBe(process.env.JWT_REFRESH_SECRET);
+  });
+
+  it('points at a throwaway database, never one someone is using', () => {
+    expect(process.env.MONGODB_URI).toContain('reclaimos-test');
+    // mongodb.net would mean a test run had reached somebody's Atlas cluster.
+    expect(process.env.MONGODB_URI).not.toMatch(/mongodb\.net/);
+  });
+
+  it('runs as NODE_ENV=test, which is what disables rate limiting in the suite', () => {
+    expect(process.env.NODE_ENV).toBe('test');
+  });
+});

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import { testEnv } from './vitest.env.js';
 
 /**
  * Integration tests: need a real mongod, from mongodb-memory-server or from
@@ -8,6 +9,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/integration/**/*.test.js'],
+    env: testEnv,
     setupFiles: ['./tests/setup.js'],
     fileParallelism: false,
     testTimeout: 30_000,
