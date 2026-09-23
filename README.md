@@ -29,6 +29,15 @@ Then fill in `backend/.env`. Three values matter:
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
+Name the database explicitly in the URI — put `/reclaimos` before the `?`:
+
+```
+mongodb+srv://user:pass@cluster.mongodb.net/reclaimos?retryWrites=true&w=majority
+```
+
+Without it the app still uses `reclaimos`, but it says so on every start, because a
+URI that names no database otherwise puts everything in one called `test`.
+
 The server validates all of this at boot and refuses to start if something is
 missing or malformed, so a typo fails immediately rather than at 3am.
 
@@ -74,6 +83,9 @@ when it finishes.
 
 - **`npm run db:reset`** empties the database. It refuses to run in production,
   prints what it is about to destroy, and needs `-- --yes` to go ahead.
+- **`lint`, `test` and `verify` run both projects**, so they do not take arguments —
+  anything after `--` would reach only the second half. To pass a flag or a filename
+  through, run the script inside `backend/` or `frontend/` directly.
 - **The access token never touches browser storage.** It lives in memory, and a
   reload re-obtains one from the httpOnly refresh cookie. There is an eslint rule
   and a test enforcing that.
