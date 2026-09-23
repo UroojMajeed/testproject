@@ -5,33 +5,22 @@
     { "name": "frontend — App :3000", "path": "frontend" }
   ],
   "settings": {
-    "files.exclude": {
-      "backend": true,
-      "frontend": true
-    },
+    "files.exclude": { "backend": true, "frontend": true },
     "search.exclude": {
       "**/node_modules": true,
       "**/dist": true,
       "**/package-lock.json": true
     },
     "files.eol": "\n",
-    "editor.formatOnSave": false,
     "editor.rulers": [100],
     "editor.tabSize": 2,
-    "javascript.preferences.importModuleSpecifierEnding": "js",
     "eslint.useFlatConfig": true,
     "eslint.workingDirectories": [
       { "directory": "backend", "changeProcessCWD": true },
       { "directory": "frontend", "changeProcessCWD": true }
-    ],
-    "terminal.integrated.cwd": "${workspaceFolder}"
+    ]
   },
   "extensions": {
-    "recommendations": [
-      "dbaeumer.vscode-eslint",
-      "mongodb.mongodb-vscode",
-      "humao.rest-client",
-      "dsznajder.es7-react-js-snippets"
-    ]
+    "recommendations": ["dbaeumer.vscode-eslint", "mongodb.mongodb-vscode", "humao.rest-client"]
   }
 }

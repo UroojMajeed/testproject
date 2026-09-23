@@ -8,6 +8,5 @@ coverage/
 *.log
 npm-debug.log*
 .DS_Store
-.vscode/
 .idea/
 .cache/
