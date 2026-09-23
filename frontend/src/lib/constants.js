@@ -1,0 +1,32 @@
+/** Mirrors backend/src/config/constants.js. If one changes, both change. */
+
+export const ERROR_CODES = Object.freeze({
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  CONFLICT: 'CONFLICT',
+  RATE_LIMITED: 'RATE_LIMITED',
+  ACCOUNT_LOCKED: 'ACCOUNT_LOCKED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  TOKEN_REUSED: 'TOKEN_REUSED',
+  INTERNAL: 'INTERNAL',
+});
+
+/**
+ * What the user reads when something goes wrong. The server's message is written
+ * for a developer reading a log; these are written for someone who is trying to
+ * sign in and is already slightly annoyed.
+ */
+export const ERROR_MESSAGES = Object.freeze({
+  [ERROR_CODES.INVALID_CREDENTIALS]: 'That email and password do not match an account.',
+  [ERROR_CODES.ACCOUNT_LOCKED]:
+    'Too many attempts, so this account is locked for a few minutes. You can reset your password instead.',
+  [ERROR_CODES.RATE_LIMITED]: 'That is a lot of attempts in a short time. Wait a minute and try again.',
+  [ERROR_CODES.CONFLICT]: 'There is already an account with that email address.',
+  [ERROR_CODES.TOKEN_REUSED]: 'For your safety this session was ended. Please sign in again.',
+  [ERROR_CODES.TOKEN_EXPIRED]: 'Your session expired. Please sign in again.',
+  [ERROR_CODES.INTERNAL]: 'Something went wrong at our end. Please try again.',
+  NETWORK: 'Cannot reach the server. Check that the API is running on port 5000.',
+});

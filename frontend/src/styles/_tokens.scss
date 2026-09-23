@@ -1,0 +1,136 @@
+// Design tokens — the single source of truth for both worlds.
+//
+// Declared as Sass variables because Bootstrap needs real values at compile time
+// (it does arithmetic on them), then re-emitted as CSS custom properties for our
+// own components. One definition, two consumers; they cannot drift apart.
+//
+// The colour pairs are measured in src/styles/contrast.test.js, which parses this
+// file. Break a ratio and `npm run test` fails, so the palette cannot quietly
+// slide below WCAG AA.
+
+// ── Surfaces ────────────────────────────────────────────────────────────────
+$page:            #f6f7f9;  // the app background
+$surface:         #ffffff;  // cards, inputs, menus
+$surface-sunken:  #eef0f4;
+
+// ── Text ────────────────────────────────────────────────────────────────────
+$ink:             #14181f;  // 17.79:1 on surface
+$ink-muted:       #5a6472;  //  6.00:1 on surface — still AA at body size
+$ink-placeholder: #616b7a;  //  5.40:1 — a placeholder is text and must pass too
+
+// ── Brand ───────────────────────────────────────────────────────────────────
+// Two values, not one. $brand is a fill and only ever carries white text;
+// $brand-text is the darker variant used when the colour *is* the text.
+$brand:           #2f52c8;  // white on it: 6.64:1
+$brand-hover:     #2445ab;
+$brand-active:    #1d3a8f;
+$brand-text:      #2445ab;  // on surface: 8.35:1
+$brand-wash:      #eef2fd;
+
+// ── Status ──────────────────────────────────────────────────────────────────
+// Same split. A colour that passes as a background almost never passes as text,
+// which is exactly how well-meant palettes fail an audit.
+$danger:          #b3261e;
+$danger-text:     #a3201a;
+$danger-wash:     #fdeeec;
+$success:         #17643f;
+$success-text:    #12583a;
+$success-wash:    #eaf5ef;
+$warn-text:       #7a4a05;
+$warn-wash:       #fdf3e2;
+
+// ── Lines ───────────────────────────────────────────────────────────────────
+// 3.63:1 on surface. A 1px input border is a non-text element and WCAG 1.4.11
+// asks for 3:1, which rules out the fashionable near-invisible grey.
+$border:          #7d8797;
+$border-subtle:   #dfe3ea;  // decorative only, never the edge of a control
+
+// ── Type ────────────────────────────────────────────────────────────────────
+$font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$text-xs:    0.8125rem;  // 13px — metadata only, never an input label
+$text-sm:    0.875rem;   // 14px
+$text-base:  1rem;       // 16px body, which also stops iOS zooming on focus
+$text-lg:    1.125rem;
+$text-xl:    1.375rem;
+$text-2xl:   1.75rem;
+$text-3xl:   2.125rem;
+
+$leading-tight:  1.25;
+$leading-normal: 1.55;
+
+// ── Space ── 4px base, so everything lands on one grid ──────────────────────
+$space-1: 0.25rem;
+$space-2: 0.5rem;
+$space-3: 0.75rem;
+$space-4: 1rem;
+$space-5: 1.5rem;
+$space-6: 2rem;
+$space-7: 3rem;
+$space-8: 4rem;
+
+// ── Shape ───────────────────────────────────────────────────────────────────
+$radius-sm: 6px;
+$radius:    10px;
+$radius-lg: 14px;
+
+// 44px: the smallest comfortable touch target, per WCAG 2.5.5 and every platform
+// guideline that has actually measured a thumb.
+$tap-target: 44px;
+
+:root {
+  --page: #{$page};
+  --surface: #{$surface};
+  --surface-sunken: #{$surface-sunken};
+
+  --ink: #{$ink};
+  --ink-muted: #{$ink-muted};
+  --ink-placeholder: #{$ink-placeholder};
+
+  --brand: #{$brand};
+  --brand-hover: #{$brand-hover};
+  --brand-active: #{$brand-active};
+  --brand-text: #{$brand-text};
+  --brand-wash: #{$brand-wash};
+
+  --danger: #{$danger};
+  --danger-text: #{$danger-text};
+  --danger-wash: #{$danger-wash};
+  --success: #{$success};
+  --success-text: #{$success-text};
+  --success-wash: #{$success-wash};
+  --warn-text: #{$warn-text};
+  --warn-wash: #{$warn-wash};
+
+  --border: #{$border};
+  --border-subtle: #{$border-subtle};
+  --focus: #{$ink};  // outer band of the two-tone focus ring
+
+  --font-sans: #{$font-sans};
+  --text-xs: #{$text-xs};
+  --text-sm: #{$text-sm};
+  --text-base: #{$text-base};
+  --text-lg: #{$text-lg};
+  --text-xl: #{$text-xl};
+  --text-2xl: #{$text-2xl};
+  --text-3xl: #{$text-3xl};
+
+  --leading-tight: #{$leading-tight};
+  --leading-normal: #{$leading-normal};
+
+  --space-1: #{$space-1};
+  --space-2: #{$space-2};
+  --space-3: #{$space-3};
+  --space-4: #{$space-4};
+  --space-5: #{$space-5};
+  --space-6: #{$space-6};
+  --space-7: #{$space-7};
+  --space-8: #{$space-8};
+
+  --radius-sm: #{$radius-sm};
+  --radius: #{$radius};
+  --radius-lg: #{$radius-lg};
+  --tap-target: #{$tap-target};
+
+  --shadow-sm: 0 1px 2px rgba(20, 24, 31, 0.06);
+  --shadow: 0 4px 16px rgba(20, 24, 31, 0.08);
+}

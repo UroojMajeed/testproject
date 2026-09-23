@@ -1,0 +1,226 @@
+// Bootstrap, configured rather than fought.
+//
+// Overrides go in before the import so Bootstrap compiles with our values and
+// generates its own utilities from them. That is why nothing here needs
+// `!important` — a stylesheet full of them is a stylesheet that lost an argument
+// with its framework. The one exception is the reduced-motion block at the
+// bottom, where overriding every author animation is the entire point.
+
+@use 'tokens' as t;
+
+// ── 1. Bootstrap's variables, set from our tokens ───────────────────────────
+$primary:   t.$brand;
+$danger:    t.$danger;
+$success:   t.$success;
+$body-bg:   t.$page;
+$body-color: t.$ink;
+
+$font-family-sans-serif: t.$font-sans;
+$font-size-base:  1rem;
+$line-height-base: t.$leading-normal;
+$headings-font-weight: 600;
+$headings-line-height: t.$leading-tight;
+
+$border-radius:    t.$radius;
+$border-radius-sm: t.$radius-sm;
+$border-radius-lg: t.$radius-lg;
+$border-color:     t.$border-subtle;
+
+$input-border-color: t.$border;
+$input-focus-border-color: t.$brand;
+$input-placeholder-color: t.$ink-placeholder;
+$input-btn-padding-y: 0.625rem;   // with 1rem text this clears 44px
+$input-btn-padding-x: 0.875rem;
+$input-btn-font-size: t.$text-base;
+
+// Ours is drawn by hand below, as a two-tone ring that works on coloured fills.
+$input-btn-focus-width: 0;
+$input-btn-focus-box-shadow: none;
+$focus-ring-box-shadow: none;
+
+$form-label-font-weight: 500;
+$form-label-margin-bottom: t.$space-2;
+$form-feedback-invalid-color: t.$danger-text;
+$form-feedback-font-size: t.$text-sm;
+
+$btn-font-weight: 500;
+$card-border-color: t.$border-subtle;
+$card-border-radius: t.$radius-lg;
+$card-spacer-x: t.$space-5;
+$card-spacer-y: t.$space-5;
+
+$alert-border-radius: t.$radius;
+
+$enable-negative-margins: true;
+
+// ── 2. Bootstrap itself, in parts ───────────────────────────────────────────
+//
+// The whole framework is about 240kB of CSS, and step 1 is four forms. These are
+// the parts the app actually uses. Adding one later is a line here; shipping all
+// of it to load a sign-in screen is not.
+//
+// The first four are not optional — they are the functions, variables and mixins
+// everything else is built out of, and they emit nothing on their own.
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+@import 'bootstrap/scss/root';        // the --bs-* custom properties
+@import 'bootstrap/scss/reboot';      // the sane element defaults
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/spinners';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/helpers';     // .visually-hidden, among others
+
+// Must come last: the utility classes are generated from everything above.
+@import 'bootstrap/scss/utilities/api';
+
+// ── 3. The handful of things Bootstrap does not decide for us ───────────────
+
+body {
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+// One focus treatment, everywhere.
+//
+// Two bands: a surface-coloured one against the control, then an ink one against
+// whatever is behind it. A single ring is invisible on one side or the other as
+// soon as the control is filled — this is legible on white, on the page grey and
+// on a brand-blue button alike, all three measured in contrast.test.js.
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus);
+}
+
+// Mouse users do not get the ring; keyboard users always do.
+:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+// A control you can hit. 44px minimum, and 16px text so iOS does not zoom the
+// page when the field takes focus.
+.btn,
+.form-control,
+.form-select {
+  min-height: var(--tap-target);
+  font-size: var(--text-base);
+}
+
+.btn-primary {
+  --bs-btn-hover-bg: #{t.$brand-hover};
+  --bs-btn-hover-border-color: #{t.$brand-hover};
+  --bs-btn-active-bg: #{t.$brand-active};
+  --bs-btn-active-border-color: #{t.$brand-active};
+}
+
+// Bootstrap's disabled default drops to 65% opacity, which takes a 6.64:1 button
+// down to roughly 2.8:1 — unreadable. Use a flat pair that still passes.
+.btn:disabled,
+.btn.disabled {
+  opacity: 1;
+  background-color: var(--surface-sunken);
+  border-color: var(--border);
+  color: var(--ink-muted);
+}
+
+// An invalid field says so in three ways: the border, the message, and
+// aria-invalid. Colour is never the only signal.
+.form-control[aria-invalid='true'] {
+  border-color: var(--danger-text);
+}
+
+.field-error {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--danger-text);
+}
+
+.field-hint {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+// Visible to a screen reader, not to the eye. Used for the live region that
+// announces form errors and for the skip link's target.
+.visually-hidden-focusable:focus,
+.skip-link:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-2);
+  overflow: visible;
+  clip: auto;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 100;
+}
+
+// The centred card the auth screens share.
+.auth-shell {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--space-5) var(--space-4);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-6) var(--space-5);
+}
+
+.auth-card__title {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-2);
+}
+
+.auth-card__lede {
+  color: var(--ink-muted);
+  margin-bottom: var(--space-5);
+}
+
+.auth-card__footer {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+a {
+  color: var(--brand-text);
+}
+
+// Nothing moves for anyone who has asked for less movement.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
