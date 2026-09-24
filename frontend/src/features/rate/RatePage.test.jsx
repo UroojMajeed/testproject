@@ -144,3 +144,33 @@ describe('setting the buyback rate', () => {
     expect(screen.queryByLabelText(/what you earn in a year/i)).not.toBeInTheDocument();
   });
 });
+
+describe('the number inputs', () => {
+  /**
+   * Reported from the real app: the hours spinner walked past zero into negative
+   * numbers. The schema rejected it on submit, but a control that offers a value
+   * the form will refuse is the screen arguing with itself.
+   */
+  it('will not let a spinner walk below the minimum', async () => {
+    await renderRate();
+
+    expect(screen.getByLabelText(/hours you work in a week/i)).toHaveAttribute('min', '1');
+    expect(screen.getByLabelText(/weeks you work in a year/i)).toHaveAttribute('min', '1');
+    expect(screen.getByLabelText(/what you earn in a year/i)).toHaveAttribute('min', '0');
+  });
+
+  it('stops the spinner at the ceiling the schema enforces', async () => {
+    await renderRate();
+
+    // 168 hours in a week and 52 weeks in a year, same numbers the server checks.
+    expect(screen.getByLabelText(/hours you work in a week/i)).toHaveAttribute('max', '168');
+    expect(screen.getByLabelText(/weeks you work in a year/i)).toHaveAttribute('max', '52');
+  });
+
+  it('steps hours and weeks in whole numbers, since fractions are rejected', async () => {
+    await renderRate();
+
+    expect(screen.getByLabelText(/hours you work in a week/i)).toHaveAttribute('step', '1');
+    expect(screen.getByLabelText(/weeks you work in a year/i)).toHaveAttribute('step', '1');
+  });
+});

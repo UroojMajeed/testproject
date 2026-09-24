@@ -163,6 +163,9 @@ export default function AuditPage() {
                     inputMode="decimal"
                     step="0.5"
                     min="0"
+                    // A week holds 168 hours. The spinner should not offer more,
+                    // and it should certainly not offer less than none.
+                    max="168"
                     placeholder="0"
                     value={row.hours}
                     onChange={(e) => update(row.key, { hours: e.target.value })}

@@ -144,11 +144,19 @@ export default function RatePage() {
       <Alert tone="error">{formError}</Alert>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {/*
+          min and max are on every one of these, and not as belt-and-braces for the
+          zod schema. A number input's spinner will happily walk past zero into
+          negatives, so without a floor the arrows offer a value the form is going
+          to reject — the control contradicting the rule on the same screen.
+        */}
         <Field
           label="What you earn in a year, before tax"
           type="number"
           inputMode="decimal"
           step="any"
+          min="0"
+          max="100000000"
           prefix={formatMoney(0, currency).replace(/[\d.,\s]/g, '')}
           error={errors.annualIncome?.message}
           {...register('annualIncome')}
@@ -158,6 +166,9 @@ export default function RatePage() {
           label="Hours you work in a week"
           type="number"
           inputMode="numeric"
+          step="1"
+          min="1"
+          max="168"
           suffix="hours"
           hint="What you actually work, not what is in your contract."
           error={errors.hoursPerWeek?.message}
@@ -168,6 +179,9 @@ export default function RatePage() {
           label="Weeks you work in a year"
           type="number"
           inputMode="numeric"
+          step="1"
+          min="1"
+          max="52"
           suffix="weeks"
           hint="52 minus holidays. Counting weeks you do not work would flatter the figure."
           error={errors.weeksPerYear?.message}
