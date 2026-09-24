@@ -6,6 +6,7 @@ import { randomToken, hashToken, newFamilyId } from '../../utils/crypto.js';
 import { signAccessToken } from '../../utils/token.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
+import * as workspaces from '../workspaces/workspace.service.js';
 
 const REFRESH_TTL_MS = () => env.JWT_REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 30 * 60 * 1000;
@@ -42,6 +43,10 @@ export async function register({ name, email, password, timezone }, ctx) {
     emailVerifyTokenHash: hashToken(verifyToken),
     emailVerifyExpiresAt: new Date(Date.now() + VERIFY_TTL_MS),
   });
+
+  // In the same breath as the account, so every authenticated request downstream
+  // can treat the workspace as a fact rather than a possibility.
+  await workspaces.createForUser(user);
 
   const refresh = await issueRefreshToken(user._id, ctx);
   logger.info({ userId: String(user._id) }, 'user registered');

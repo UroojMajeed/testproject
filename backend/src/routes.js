@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { workspaceRouter } from './modules/workspaces/workspace.routes.js';
 
 export const apiRouter = Router();
 
@@ -16,3 +17,4 @@ apiRouter.get('/health/ready', (_req, res) => {
 });
 
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/workspace', workspaceRouter);

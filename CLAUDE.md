@@ -10,9 +10,27 @@ testproject/
 
 ## Where we are
 
-**Step 1 — authentication.** Sign up, sign in, sign out, session refresh,
-password reset. Nothing else exists yet, and nothing else should be added until
-the next step is agreed.
+**Step 1 — authentication.** Done. Sign up, sign in, sign out, session refresh,
+password reset, plus the landing page and the design system.
+
+**Step 2 — what your week costs.** In progress. The agreed shape:
+
+```
+sign in → buyback rate → first audit (last week) → dashboard → every Friday
+```
+
+- A **workspace**, owned by one person. Every document carries `workspaceId`.
+- A **buyback rate**, computed from income and hours, kept as dated records.
+- **Activities** that persist, so weeks can be compared.
+- A **weekly audit** of last week: per activity, estimated hours and energy.
+- A **dashboard** that ranks activities by what they cost, and points at the worst.
+
+Deliberately **not** in step 2, each being a step of its own: the DRIP value sort,
+recommendations, delegation, playbooks, any AI, calendar import.
+
+The weekly audit asks only for hours and energy — fast, factual recall. Judging an
+activity's *value* is slow, reflective thinking and belongs to the sort step. Mixing
+them makes the weekly habit heavy, and the habit is the product.
 
 When asked for something outside the current step, say so before building it.
 Scope creep is the thing this rebuild exists to avoid.
@@ -72,6 +90,17 @@ npm run test:integration  # backend work touching the database (needs mongod)
    the process rather than failing later.
 5. **Auth is not softened for convenience.** Rotation with reuse detection,
    hashed tokens, identical responses for wrong-password and no-such-user.
+6. **Every query carries `workspaceId`.** A query without one is a cross-tenant
+   leak. The tenant plugin throws rather than quietly returning another
+   workspace's rows.
+7. **Estimated and verified are different fields, always.** They never share a
+   name, a colour or a sentence. Everything in step 2 is estimated — self-reported
+   recall — and must be named so it cannot later be mistaken for measured fact.
+8. **The buyback rate is a planning estimate**, labelled as such wherever it
+   appears. Never a wage, never a valuation.
+9. **A computed figure stores its inputs and its formula version.** A rate that
+   changed in March must not silently rewrite what June was told. Stamp the rate
+   onto anything derived from it rather than looking it up again later.
 
 ## Commits
 
