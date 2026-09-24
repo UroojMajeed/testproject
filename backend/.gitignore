@@ -4,3 +4,7 @@ node_modules/
 !.env.example
 coverage/
 *.log
+
+# Local scratch
+.mongod-dev.mjs
+.conflict-probe.mjs

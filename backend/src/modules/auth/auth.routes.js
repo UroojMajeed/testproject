@@ -4,7 +4,7 @@ import * as v from './auth.validation.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { verifyOrigin } from '../../middleware/csrf.middleware.js';
-import { authLimiter, sensitiveLimiter } from '../../middleware/rateLimiter.js';
+import { authLimiter, refreshLimiter, sensitiveLimiter } from '../../middleware/rateLimiter.js';
 
 export const authRouter = Router();
 
@@ -13,7 +13,7 @@ authRouter.use(verifyOrigin);
 
 authRouter.post('/register', authLimiter, validate(v.registerSchema), c.register);
 authRouter.post('/login', authLimiter, validate(v.loginSchema), c.login);
-authRouter.post('/refresh', authLimiter, c.refresh);
+authRouter.post('/refresh', refreshLimiter, c.refresh);
 authRouter.post('/logout', c.logout);
 
 authRouter.post('/forgot-password', sensitiveLimiter, validate(v.forgotPasswordSchema), c.forgotPassword);

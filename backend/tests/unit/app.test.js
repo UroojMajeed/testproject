@@ -93,3 +93,43 @@ describe('route registration', () => {
     expect(res.body.error.code).toBe('UNAUTHENTICATED');
   });
 });
+
+describe('rate limits match what each route is for', () => {
+  /**
+   * Refresh used to share the sign-in limiter, and that was a real bug: the access
+   * token lives in memory, so every page load calls refresh once. At 20 in fifteen
+   * minutes, somebody working normally locked themselves out of their own session.
+   * It surfaced by driving the app repeatedly until it answered 429 to everything.
+   */
+  it('gives refresh room for a working afternoon, not a sign-in attempt', async () => {
+    const { LIMITS } = await import('../../src/middleware/rateLimiter.js');
+
+    // A page load, a second tab, a token expiring mid-session — all refreshes.
+    expect(LIMITS.refresh).toBeGreaterThanOrEqual(120);
+    expect(LIMITS.refresh).toBeGreaterThan(LIMITS.auth * 5);
+  });
+
+  it('keeps sign in tight, because that is the brute-force surface', async () => {
+    const { LIMITS } = await import('../../src/middleware/rateLimiter.js');
+
+    // Well under the 5 failures that lock an account, so the lockout is what a
+    // guesser meets first rather than a limiter they can wait out.
+    expect(LIMITS.auth).toBeLessThanOrEqual(30);
+  });
+
+  it('keeps password reset tightest of all, since it also sends email', async () => {
+    const { LIMITS } = await import('../../src/middleware/rateLimiter.js');
+
+    expect(LIMITS.sensitive).toBeLessThan(LIMITS.auth);
+  });
+
+  it('puts refresh on its own limiter, not the sign-in one', async () => {
+    const { readFileSync } = await import('node:fs');
+    const routes = readFileSync(new URL('../../src/modules/auth/auth.routes.js', import.meta.url), 'utf8');
+
+    // Asserting on the wiring because the middleware skips in tests, so a swap
+    // back to authLimiter would otherwise pass everything here in silence.
+    expect(routes).toMatch(/post\('\/refresh',\s*refreshLimiter/);
+    expect(routes).toMatch(/post\('\/login',\s*authLimiter/);
+  });
+});
