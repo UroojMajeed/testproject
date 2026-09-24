@@ -12,7 +12,12 @@ import { toJSONPlugin, softDeletePlugin } from './plugins.js';
 const workspaceSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 120 },
-    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    // Unique, not merely indexed. One workspace per owner is the rule today, and
+    // without the constraint two requests arriving together can each create one —
+    // which splits the account's data in half, silently.
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true,
+    },
 
     // The week rolls over on this day in the owner's timezone. Friday by default
     // because that is when a week is fresh enough to recall and finished enough to

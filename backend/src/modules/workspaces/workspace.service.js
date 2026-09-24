@@ -27,6 +27,42 @@ export async function forOwner(userId) {
 }
 
 /**
+ * The workspace for an account, creating it if there is not one.
+ *
+ * Registration makes one, so in the normal case this is the same single findOne
+ * that forOwner does. It exists for the accounts that predate step 2: they were
+ * created when workspaces did not, and every tenant-scoped route answered 404 for
+ * them — a signed-in person, with a real session, told their own workspace does
+ * not exist and no way forward but deleting the account.
+ *
+ * A migration script would fix the accounts that exist today and do nothing for
+ * the half-finished registration that fails next month. This handles both, and
+ * being idempotent it costs nothing once the row is there.
+ */
+export async function findOrCreateForOwner(user) {
+  const existing = await Workspace.findOne({ ownerId: user._id });
+  if (existing) return existing;
+
+  logger.info({ userId: String(user._id) }, 'workspace missing for an existing account — creating it');
+
+  try {
+    return await createForUser(user);
+  } catch (err) {
+    /**
+     * Two requests racing on the same account.
+     *
+     * One page load fires several of these at once, and the check above is not a
+     * lock — without the unique index on ownerId and this branch, each request
+     * created its own workspace and the account's data ended up split across two,
+     * with no error anywhere. The index is the arbiter; the loser reads the row
+     * the winner made.
+     */
+    if (err?.code === 11000) return Workspace.findOne({ ownerId: user._id });
+    throw err;
+  }
+}
+
+/**
  * The one call the client needs in order to know where to send someone.
  *
  * Without it the frontend has to infer onboarding state from the absence of

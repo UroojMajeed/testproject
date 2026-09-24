@@ -39,6 +39,24 @@ async function main() {
     logger.fatal({ reason }, 'unhandled rejection — shutting down');
     shutdown('unhandledRejection');
   });
+
+  /**
+   * The one that was missing, and it cost two debugging sessions.
+   *
+   * Node's default for an uncaught exception is to print to stderr and exit. When
+   * the process is a dev server whose stdout the reader is not watching, or one
+   * `node --watch` immediately restarts, that stack goes past unseen — and all
+   * anybody sees is the browser reporting ECONNRESET on a request that was in
+   * flight when the process went down. Twice now that has looked like a mystery.
+   *
+   * pino writes it as one structured line, before exiting, so it survives in the
+   * same log as everything else. The process still dies: an uncaught exception
+   * means unknown state, and serving on afterwards is worse than stopping.
+   */
+  process.on('uncaughtException', (err) => {
+    logger.fatal({ err }, 'uncaught exception — the process is going down');
+    process.exit(1);
+  });
 }
 
 main().catch((err) => {
