@@ -11,4 +11,6 @@ export const paths = Object.freeze({
   // over a URL, and so a signed-out visitor landing anywhere under /app gets the
   // same treatment without a rule per page.
   app: '/app',
+  rate: '/app/rate',
+  audit: '/app/audit',
 });

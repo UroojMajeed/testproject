@@ -14,6 +14,9 @@
 
 export const PASSWORD = 'correct-horse-battery-staple';
 
+/** The dashboard greets by first name, which is friendlier and deliberate. */
+export const FIRST_NAME = 'Urooj';
+
 export const USER = {
   id: '68f0a1b2c3d4e5f600000001',
   name: 'Urooj Majeed',
@@ -35,7 +38,30 @@ const fail = (status, code, message, details) => json(status, { success: false, 
  * `signedIn` starts the session already established, which is how a test reaches
  * the signed-in pages without walking the sign-in form every time.
  */
-export async function stubApi(page, { signedIn = false } = {}) {
+/**
+ * A workspace that is past onboarding with one week filed.
+ *
+ * Needed because the signed-in area is gated on GET /workspace/state: without it
+ * every test that reaches /app lands on the gate's error screen instead of the
+ * dashboard, which is how seventeen of these failed the first time step 2 landed.
+ */
+const WORKSPACE = { id: 'ws1', name: 'My business', auditDay: 'friday', timezone: 'UTC', currency: 'USD', createdAt: '2026-09-01T00:00:00.000Z' };
+
+const RATE = { id: 'r1', rateMinorPerHour: 1500, currency: 'USD', annualIncomeMinor: 12_000_000, hoursPerWeek: 40, weeksPerYear: 50, formulaVersion: 1, effectiveFrom: '2026-09-01T00:00:00.000Z' };
+
+const DASHBOARD = {
+  week: { weekStarting: '2026-09-14', weekEnding: '2026-09-20', isTypical: true, completedAt: '2026-09-19T10:00:00.000Z' },
+  rate: RATE,
+  activities: [
+    { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+    { activityId: 'a2', name: 'Sales calls', estimatedMinutes: 360, energy: 2, estimatedWeeklyCostMinor: 9000, estimatedAnnualCostMinor: 450000 },
+  ],
+  totals: { estimatedMinutes: 600, estimatedWeeklyCostMinor: 15000, estimatedAnnualCostMinor: 750000 },
+  worst: { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+  weeksRecorded: 1,
+};
+
+export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) {
   const state = { session: signedIn, failedLogins: 0 };
   const calls = [];
 
@@ -88,6 +114,42 @@ export async function stubApi(page, { signedIn = false } = {}) {
       case '/api/v1/auth/reset-password':
         state.session = false; // a reset revokes every session
         return route.fulfill(ok({ message: 'Password updated. Please sign in with your new password.' }));
+
+      // ── Step 2 ────────────────────────────────────────────────────────
+      case '/api/v1/workspace':
+        return route.fulfill(ok({ workspace: WORKSPACE }));
+
+      case '/api/v1/workspace/state':
+        return route.fulfill(ok({
+          weekStarting: '2026-09-14',
+          needsRate: false,
+          needsFirstAudit: false,
+          currentWeekFiled: true,
+          completedAudits: 1,
+          ...onboarding,
+        }));
+
+      case '/api/v1/workspace/rate':
+        return route.fulfill(request.method() === 'PUT' ? ok({ rate: RATE }, 201) : ok({ rate: RATE }));
+
+      case '/api/v1/workspace/activities':
+        return route.fulfill(ok({ activities: [
+          { id: 'a1', name: 'Invoicing', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+          { id: 'a2', name: 'Sales calls', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+        ] }));
+
+      case '/api/v1/workspace/audits/current':
+        return route.fulfill(ok({
+          week: {
+            id: 'w1', weekStarting: '2026-09-21', weekEnding: '2026-09-27', timezone: 'UTC',
+            status: 'draft', isTypical: true, completedAt: null, entries: [], totalEstimatedMinutes: 0,
+          },
+          suggestions: [],
+          isNew: true,
+        }));
+
+      case '/api/v1/workspace/dashboard':
+        return route.fulfill(ok(DASHBOARD));
 
       default:
         // Loud, because a silent 404 here looks like a frontend bug for an hour.

@@ -6,7 +6,10 @@ import LoginPage from './features/auth/pages/LoginPage.jsx';
 import RegisterPage from './features/auth/pages/RegisterPage.jsx';
 import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './features/auth/pages/ResetPasswordPage.jsx';
-import HomePage from './features/home/HomePage.jsx';
+import { OnboardingGate } from './routes/OnboardingGate.jsx';
+import DashboardPage from './features/dashboard/DashboardPage.jsx';
+import RatePage from './features/rate/RatePage.jsx';
+import AuditPage from './features/audit/AuditPage.jsx';
 
 /**
  * The skip link lives here, once, and every page supplies the `<main id="main">`
@@ -36,7 +39,16 @@ export default function App() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path={paths.app} element={<HomePage />} />
+          {/*
+            ProtectedRoute answers "are you signed in"; OnboardingGate answers
+            "where do you belong", from the server's own /state. Nested, because
+            the second question only makes sense once the first is yes.
+          */}
+          <Route element={<OnboardingGate />}>
+            <Route path={paths.app} element={<DashboardPage />} />
+            <Route path={paths.rate} element={<RatePage />} />
+            <Route path={paths.audit} element={<AuditPage />} />
+          </Route>
         </Route>
 
         {/*

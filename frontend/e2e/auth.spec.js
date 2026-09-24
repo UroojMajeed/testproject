@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stubApi, collectConsoleErrors, PASSWORD, USER } from './apiStub.js';
+import { stubApi, collectConsoleErrors, PASSWORD, USER, FIRST_NAME } from './apiStub.js';
 
 /**
  * The login module, driven the way a person drives it.
@@ -50,7 +50,7 @@ test.describe('signing up', () => {
     await page.getByRole('button', { name: /create account/i }).click();
 
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(USER.name);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(FIRST_NAME);
 
     // The browser's own timezone goes along, so dates read correctly later.
     const [sent] = api.callsTo('/api/v1/auth/register');
@@ -115,14 +115,14 @@ test.describe('the session', () => {
   test('survives a reload, without the token ever touching storage', async ({ page }) => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(USER.name);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(FIRST_NAME);
 
     await page.reload();
 
     // The access token is gone the moment the tab reloads; the httpOnly cookie is
     // the only evidence a session exists, and the boot refresh is what recovers it.
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(USER.name);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(FIRST_NAME);
 
     const stored = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
     expect(stored, 'browser storage should be empty').toBe('{}');

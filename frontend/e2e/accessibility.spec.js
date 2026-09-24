@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stubApi, USER } from './apiStub.js';
+import { stubApi, FIRST_NAME } from './apiStub.js';
 
 /**
  * The checks that need a browser.
@@ -238,7 +238,7 @@ test.describe('what the browser actually computes', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(USER.name);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(FIRST_NAME);
     await expectReadable(page.locator('h1'), 'greeting');
     await expectReadable(page.getByRole('button', { name: /sign out/i }), 'sign out');
   });

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import App from '../App.jsx';
 import { renderWithProviders } from '../test/renderWithProviders.jsx';
-import { mockApi, success, bootSignedOut } from '../test/fetchMock.js';
+import { mockApi, success, bootSignedOut, signedInWorkspace } from '../test/fetchMock.js';
 import { endpoints } from '../lib/api/endpoints.js';
 import { paths } from './paths.js';
 
@@ -24,7 +24,9 @@ const SESSION = success({
 });
 
 const renderAt = async (route, signedIn = false) => {
-  mockApi(signedIn ? { [`POST ${endpoints.auth.refresh()}`]: SESSION } : bootSignedOut);
+  mockApi(signedIn
+    ? { [`POST ${endpoints.auth.refresh()}`]: SESSION, ...signedInWorkspace() }
+    : bootSignedOut);
   return renderWithProviders(<App />, { route });
 };
 
@@ -50,6 +52,7 @@ describe('every page is one document with one main landmark', () => {
 
   it('the signed-in page', async () => {
     const { container } = await renderAt(paths.app, true);
+    await screen.findByRole('heading', { level: 1, name: /hello/i });
 
     const mains = container.querySelectorAll('main');
     expect(mains).toHaveLength(1);
@@ -88,6 +91,6 @@ describe('the routes lead where they say', () => {
   it('moves a signed-in user off the sign-up form, which is a dead end for them', async () => {
     await renderAt(paths.register, true);
 
-    expect(screen.getByRole('heading', { level: 1, name: /urooj majeed/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /hello/i })).toBeInTheDocument();
   });
 });

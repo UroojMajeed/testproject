@@ -5,9 +5,18 @@
  * to a bare spinner — a button that changes size under the cursor is how people
  * click the wrong thing.
  */
-export function SubmitButton({ pending, children, pendingLabel = 'Working…', className = '' }) {
+export function SubmitButton({
+  pending, children, pendingLabel = 'Working…', className = '', type = 'submit', ...rest
+}) {
   return (
-    <button type="submit" className={`btn btn-primary w-100 ${className}`.trim()} disabled={pending}>
+    <button
+      {...rest}
+      // Defaults to submit, but the audit screen drives two different saves from
+      // one set of rows rather than a form, and a stray submit there would reload.
+      type={type}
+      className={`btn btn-primary w-100 ${className}`.trim()}
+      disabled={pending}
+    >
       {pending ? (
         <>
           <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />
