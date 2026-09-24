@@ -17,6 +17,36 @@ mongoose.connection.on('connected', () => logger.info('mongo connected'));
 mongoose.connection.on('error', (err) => logger.error({ err }, 'mongo error'));
 mongoose.connection.on('disconnected', () => logger.warn('mongo disconnected'));
 
+/**
+ * Index builds fail silently otherwise, and that is worse than it sounds.
+ *
+ * With autoIndex on, Mongoose builds each model's indexes in the background. If
+ * one fails — most often IndexKeySpecsConflict, an index of the same name left by
+ * an older version of the schema — Mongoose stores the error on the model and says
+ * nothing. The app keeps serving, the index quietly stays as it was, and a `unique`
+ * constraint you believe you have simply is not there.
+ *
+ * Verified: planting a non-unique index where Activity expects a unique one leaves
+ * the collection with unique=false, no log line, and a perfectly healthy server.
+ */
+export async function reportIndexProblems(models = Object.values(mongoose.models)) {
+  const failures = [];
+
+  await Promise.all(models.map(async (model) => {
+    try {
+      await model.init();
+    } catch (err) {
+      failures.push({ model: model.modelName, message: err.message });
+      logger.error(
+        { err, model: model.modelName },
+        'index build failed — the constraint you expect is not in place',
+      );
+    }
+  }));
+
+  return failures;
+}
+
 export async function connectDb(uri = env.MONGODB_URI) {
   // A connection string with no database name would otherwise land everything
   // in "test". Only set dbName when the URI does not already say, so a
