@@ -1290,3 +1290,87 @@ a:hover .logo { color: var(--fg-default); }
 
   .shell__label { font-size: var(--text-2xs); }
 }
+
+// ── The activities list ─────────────────────────────────────────────────────
+
+.activities-gap {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+}
+
+.activity-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.activity-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+// Archived rows stay legible rather than fading out: they are still readable
+// history, and a greyed-out row at 3:1 is a row nobody can check.
+.activity-row.is-archived {
+  background: var(--bg-sunken);
+  border-style: dashed;
+}
+
+.activity-row__main {
+  display: grid;
+  // The name takes the room; the answer needs only enough for its longest label.
+  grid-template-columns: 1fr 14rem;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+@media (max-width: 38rem) {
+  .activity-row__main { grid-template-columns: 1fr; }
+}
+
+.activity-row__name,
+.activity-row__value { margin: 0; display: block; }
+
+.activity-row__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.activity-row__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+}
+
+.activity-row__archive { --bs-btn-color: var(--fg-subtle); }
+
+// The confirmation replaces the button in place rather than opening a dialog: it
+// is one row of a list, and a modal for archiving one line is a lot of ceremony.
+.activity-row__confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--fg-muted);
+}
+
+.activities-archived {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  cursor: pointer;
+
+  input { flex: none; }
+}

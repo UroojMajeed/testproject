@@ -91,7 +91,7 @@ test.describe('signing up', () => {
     await fillSignUp(page, { email: 'taken@example.com' });
     await page.getByRole('button', { name: /create account/i }).click();
 
-    await expect(page.getByRole('alert')).toContainText(/already an account with that email/i);
+    await expect(page.getByRole('alert')).toContainText(/already registered/i);
     await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /create account/i })).toBeEnabled();
   });

@@ -112,7 +112,7 @@ describe('the sign up screen', () => {
 
     await fillIn(user);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/already an account with that email/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already registered/i);
     expect(screen.getByRole('link', { name: /sign in/i })).toBeInTheDocument();
   });
 

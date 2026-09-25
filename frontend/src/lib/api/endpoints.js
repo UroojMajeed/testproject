@@ -50,8 +50,10 @@ export const endpoints = Object.freeze({
     // PUT { annualIncomeMinor, hoursPerWeek, weeksPerYear } → 201 { rate }
     rateHistory: () => `${API_BASE}/workspace/rate/history`,
 
-    // → 200 { activities }
-    activities: () => `${API_BASE}/workspace/activities`,
+    // → 200 { activities } · POST { name } → 201 { activity }
+    //   includeArchived asks for the archived ones too; without it they are hidden.
+    activities: ({ includeArchived = false } = {}) =>
+      `${API_BASE}/workspace/activities${includeArchived ? '?includeArchived=true' : ''}`,
     // → 200 { activities } — the ones with no value answered yet
     unsortedActivities: () => `${API_BASE}/workspace/activities/unsorted`,
     // PUT { value: low|important|critical } → 200 { activity }

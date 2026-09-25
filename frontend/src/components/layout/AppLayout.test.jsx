@@ -38,10 +38,11 @@ describe('the frame around the signed-in app', () => {
     await renderAt(paths.app);
 
     const links = within(sections()).getAllByRole('link');
-    expect(links.map((a) => a.textContent)).toEqual(['Your week', 'This week', 'Your rate']);
+    expect(links.map((a) => a.textContent)).toEqual(['Your week', 'This week', 'Activities', 'Your rate']);
     expect(links[0]).toHaveAttribute('href', paths.app);
     expect(links[1]).toHaveAttribute('href', paths.audit);
-    expect(links[2]).toHaveAttribute('href', paths.rate);
+    expect(links[2]).toHaveAttribute('href', paths.activities);
+    expect(links[3]).toHaveAttribute('href', paths.rate);
   });
 
   it('says which section you are in, out loud and not only in colour', async () => {

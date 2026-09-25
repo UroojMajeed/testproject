@@ -14,4 +14,5 @@ export const paths = Object.freeze({
   rate: '/app/rate',
   audit: '/app/audit',
   sort: '/app/sort',
+  activities: '/app/activities',
 });

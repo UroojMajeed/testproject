@@ -17,7 +17,7 @@ test.describe('the frame', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await expect(sections(page).getByRole('link')).toHaveText(['Your week', 'This week', 'Your rate']);
+    await expect(sections(page).getByRole('link')).toHaveText(['Your week', 'This week', 'Activities', 'Your rate']);
     await expect(sections(page).getByRole('link', { name: 'Your week' })).toHaveAttribute('aria-current', 'page');
   });
 

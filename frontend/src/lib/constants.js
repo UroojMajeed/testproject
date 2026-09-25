@@ -24,7 +24,13 @@ export const ERROR_MESSAGES = Object.freeze({
   [ERROR_CODES.ACCOUNT_LOCKED]:
     'Too many attempts, so this account is locked for a few minutes. You can reset your password instead.',
   [ERROR_CODES.RATE_LIMITED]: 'That is a lot of attempts in a short time. Wait a minute and try again.',
-  [ERROR_CODES.CONFLICT]: 'There is already an account with that email address.',
+  // No CONFLICT here on purpose. It used to read "There is already an account
+  // with that email address", which is true of the one conflict the app had when
+  // it was written and wrong about every other: renaming an activity to a name
+  // already in use answered with a sentence about email addresses. A code says
+  // what kind of failure it is, not what the failure was about, so the server's
+  // own message — "You already have an activity with that name" — is the one
+  // worth showing.
   [ERROR_CODES.TOKEN_REUSED]: 'For your safety this session was ended. Please sign in again.',
   [ERROR_CODES.TOKEN_EXPIRED]: 'Your session expired. Please sign in again.',
   [ERROR_CODES.INTERNAL]: 'Something went wrong at our end. Please try again.',

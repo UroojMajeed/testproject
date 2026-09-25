@@ -37,6 +37,17 @@ export const NAV = Object.freeze([
     ),
   },
   {
+    to: paths.activities,
+    label: 'Activities',
+    hint: 'The things that keep coming back, and what each is worth',
+    icon: (
+      <>
+        <path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11" strokeLinecap="round" />
+        <path d="M3.5 6.3 4.6 7.4 6.8 5.2M3.5 11.8 4.6 12.9 6.8 10.7M3.5 17.3 4.6 18.4 6.8 16.2" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+  {
     to: paths.rate,
     label: 'Your rate',
     hint: 'The planning estimate everything is priced at',

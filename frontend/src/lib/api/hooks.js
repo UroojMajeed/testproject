@@ -37,10 +37,35 @@ export function useSetRate() {
   });
 }
 
-export function useActivities() {
+export function useActivities({ includeArchived = false } = {}) {
   return useQuery({
-    queryKey: ['workspace', 'activities'],
-    queryFn: () => api.get(endpoints.workspace.activities()),
+    // The flag is part of the key: two different lists come back, and sharing one
+    // cache entry would show the archived ones on a screen that did not ask.
+    queryKey: ['workspace', 'activities', { includeArchived }],
+    queryFn: () => api.get(endpoints.workspace.activities({ includeArchived })),
+  });
+}
+
+export function useRenameActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }) => api.patch(endpoints.workspace.activity(id), { name }),
+    // The list is sorted by name, so a rename can move the row. That is the right
+    // thing to happen and the reader caused it, so refetch rather than hold the
+    // old order and lie about where it sits.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace'] }),
+  });
+}
+
+/**
+ * Archived, never deleted: past weeks reference the row, and a week's history
+ * should not change because something stopped happening.
+ */
+export function useArchiveActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.del(endpoints.workspace.activity(id)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace'] }),
   });
 }
 

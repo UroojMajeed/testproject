@@ -83,6 +83,13 @@ export const UNSORTED = [
   { id: 'a4', name: 'Social posts', value: null, valueSetAt: null, archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
 ];
 
+/** The persistent list, which the activities screen renames and archives in place. */
+export const ACTIVITIES = [
+  { id: 'a1', name: 'Invoicing', value: 'low', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+  { id: 'a2', name: 'Sales calls', value: 'critical', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+  { id: 'a5', name: 'Tidying the CRM', value: 'low', valueSetAt: '2026-09-20T00:00:00.000Z', archived: true, createdAt: '2026-09-01T00:00:00.000Z' },
+];
+
 /**
  * @param unsorted  the activities with no value answered yet. Empty by default, so
  *   every existing test starts past the sort rather than being sent to it.
@@ -95,6 +102,8 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
     session: signedIn,
     failedLogins: 0,
     unsorted: unsorted.map((row) => ({ ...row })),
+    // Cloned per stub, because this screen renames and archives them in place.
+    activities: ACTIVITIES.map((row) => ({ ...row })),
     // The gate is about the *first* sort, so one answer opens it for good — which
     // is what lets a test walk the deck to the end and land on the dashboard.
     sortedAny: false,
@@ -118,9 +127,41 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
       const answered = state.unsorted.find((row) => row.id === id);
       state.unsorted = state.unsorted.filter((row) => row.id !== id);
       state.sortedAny = true;
+      const listed = state.activities.find((a) => a.id === id);
+      if (listed) listed.value = body.value;
       return route.fulfill(ok({
         activity: { ...answered, id, value: body.value, valueSetAt: new Date().toISOString() },
       }));
+    }
+
+    /**
+     * One activity, renamed or archived.
+     *
+     * Scoped to the two methods that reach it: the same shape also matches
+     * GET /activities/unsorted, and an unscoped handler answered that with
+     * "No such activity" — the sort screen broke and the message named a
+     * concept the request had nothing to do with.
+     */
+    const activityMatch = ['PATCH', 'DELETE'].includes(request.method())
+      && path.match(/^\/api\/v1\/workspace\/activities\/([^/]+)$/);
+    if (activityMatch) {
+      const [, id] = activityMatch;
+      const activity = state.activities.find((a) => a.id === id);
+      if (!activity) return route.fulfill(fail(404, 'NOT_FOUND', 'No such activity'));
+
+      if (request.method() === 'PATCH') {
+        // The same 409 the real service raises, so the screen's handling of it is
+        // exercised rather than assumed.
+        if (state.activities.some((a) => a.id !== id && a.name === body.name)) {
+          return route.fulfill(fail(409, 'CONFLICT', 'You already have an activity with that name'));
+        }
+        activity.name = body.name;
+        return route.fulfill(ok({ activity: { ...activity } }));
+      }
+      if (request.method() === 'DELETE') {
+        activity.archived = true;
+        return route.fulfill({ status: 204, body: '' });
+      }
     }
 
     switch (path) {
@@ -188,11 +229,16 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
       case '/api/v1/workspace/rate':
         return route.fulfill(request.method() === 'PUT' ? ok({ rate: RATE }, 201) : ok({ rate: RATE }));
 
-      case '/api/v1/workspace/activities':
-        return route.fulfill(ok({ activities: [
-          { id: 'a1', name: 'Invoicing', value: 'low', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
-          { id: 'a2', name: 'Sales calls', value: 'critical', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
-        ] }));
+      case '/api/v1/workspace/activities': {
+        if (request.method() === 'POST') {
+          return route.fulfill(ok({ activity: { id: 'new', name: body.name, value: null, valueSetAt: null, archived: false, createdAt: new Date().toISOString() } }, 201));
+        }
+        // The archived ones are only sent when asked for, as the API does it.
+        const wantsArchived = new URL(request.url()).searchParams.get('includeArchived') === 'true';
+        return route.fulfill(ok({
+          activities: state.activities.filter((a) => wantsArchived || !a.archived),
+        }));
+      }
 
       // ── Step 3 ────────────────────────────────────────────────────────
       case '/api/v1/workspace/activities/unsorted':
