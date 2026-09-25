@@ -132,7 +132,7 @@ export default function AuditPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="page-width app-page app-page--wide">
+    <main id="main" tabIndex={-1} className="page-width app-page">
 
       <h1 className="app-header__title">{filed ? 'This week is filed' : 'Where did last week go?'}</h1>
       <p className="app-header__subtitle mb-2">
@@ -194,31 +194,29 @@ export default function AuditPage() {
                 </div>
               </label>
 
-              {/*
-                In the same grid as the name and the hours, so one activity reads
-                as one line. It used to sit in a block of its own underneath, which
-                made every row four times as tall and a dozen of them a scroll.
-              */}
-              {row.activityName.trim() ? (
-                <EnergyPicker
-                  name={row.key}
-                  value={row.energy}
-                  activityLabel={row.activityName}
-                  onChange={(energy) => update(row.key, { energy })}
-                />
-              ) : <span className="audit-row__spacer" />}
+            </div>
+
+            {row.activityName.trim() ? (
+              <EnergyPicker
+                name={row.key}
+                value={row.energy}
+                activityLabel={row.activityName}
+                onChange={(energy) => update(row.key, { energy })}
+              />
+            ) : null}
 
             {/*
               Only for a row with something in it. Remove on an empty box offers to
               delete nothing, and the trailing box is always empty — so every list
-              ended with an action that could not do anything.
+              would otherwise end with an action that could not do anything.
 
               Last in the DOM, and last visually, so the two agree. It used to sit
               beside the hours field, which put "Remove" between the hours and the
               energy choice in the tab order — a keyboard user filling in a row met
               the delete button halfway through.
             */}
-              {row.activityName.trim() || row.hours !== '' ? (
+            {row.activityName.trim() || row.hours !== '' ? (
+              <div className="audit-row__actions">
                 <button
                   type="button"
                   className="btn btn-link audit-row__remove"
@@ -231,8 +229,8 @@ export default function AuditPage() {
                   <span className="visually-hidden">Remove {row.activityName || `activity ${index + 1}`}</span>
                   <span aria-hidden="true">Remove</span>
                 </button>
-              ) : <span className="audit-row__spacer-remove" />}
-            </div>
+              </div>
+            ) : null}
           </li>
         ))}
       </ol>

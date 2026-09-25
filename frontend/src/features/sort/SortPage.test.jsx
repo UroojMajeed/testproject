@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import SortPage from './SortPage.jsx';
@@ -27,90 +27,113 @@ const renderSort = async (over = {}, ui = <SortPage />) => {
       'PUT /api/v1/workspace/activities/a1/value': success({ activity: { ...THREE[0], value: 'low' } }),
       'PUT /api/v1/workspace/activities/a2/value': success({ activity: { ...THREE[1], value: 'critical' } }),
       'PUT /api/v1/workspace/activities/a3/value': success({ activity: { ...THREE[2], value: 'low' } }),
+      ...over,
     }),
-    ...over,
   });
   const utils = await renderWithProviders(ui, { route: '/app/sort' });
-  // Either the deck or the failure notice — the error branch has no heading, by the
-  // same convention the dashboard uses.
-  await screen.findByText(/what matters\?|everything is sorted|please try again|could not load/i);
+  await screen.findByText(/one more question each|everything is sorted|please try again|could not load/i);
   return { ...utils, ...mock };
 };
 
-const answer = (label) => screen.getByRole('button', { name: new RegExp(label, 'i') });
+const row = (name) => screen.getByText(name).closest('li');
 
 describe('sorting what matters', () => {
-  it('asks about one activity at a time, not all of them at once', async () => {
+  /**
+   * This screen was a deck of cards, one at a time, and it arrives straight after
+   * the audit — so somebody had just finished a form and was then made to click
+   * through five more screens before being allowed to see the figures they came
+   * for. Seeing the whole list turns a gauntlet back into a list.
+   */
+  it('shows every activity at once, not one screen each', async () => {
     await renderSort();
 
-    expect(screen.getByText('Invoicing')).toBeInTheDocument();
-    // A grid of twelve dropdowns turns a judgement into data entry. Only the card
-    // in hand is on screen, which is the whole reason this screen exists at all.
-    expect(screen.queryByText('Sales calls')).not.toBeInTheDocument();
-    expect(screen.queryByText('Bookkeeping')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    for (const name of ['Invoicing', 'Sales calls', 'Bookkeeping']) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
   });
 
   it('asks what happens rather than what it is worth', async () => {
     await renderSort();
 
     // Almost nobody can price answering email, and a figure they guessed is noise
-    // the entire matrix would then be built on.
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/if you stopped doing this for a month/i);
+    // the whole matrix would then be built on.
+    expect(screen.getByText(/if you stopped doing it for a month, what happens/i)).toBeInTheDocument();
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
-  it('offers three answers, each with what it means', async () => {
+  it('offers the same three answers on every row', async () => {
     await renderSort();
 
-    expect(answer('Revenue stops')).toBeInTheDocument();
-    expect(answer('Something slips')).toBeInTheDocument();
-    expect(answer('Not much, honestly')).toBeInTheDocument();
-    expect(screen.getByText(/nobody outside would notice/i)).toBeInTheDocument();
+    for (const label of ['Revenue stops', 'Something slips', 'Not much, honestly']) {
+      expect(within(row('Invoicing')).getByRole('button', { name: label })).toBeInTheDocument();
+    }
   });
 
-  it('says where in the deck the reader is', async () => {
+  it('says how much is left, so the end is in sight', async () => {
     const user = userEvent.setup();
     await renderSort();
 
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    expect(screen.getByText('0 of 3 answered')).toBeInTheDocument();
 
-    await user.click(answer('Not much, honestly'));
+    await user.click(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }));
 
-    expect(await screen.findByText('2 of 3')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 3 answered')).toBeInTheDocument();
   });
 
-  it('saves each answer as it is given, so giving up halfway keeps the answers', async () => {
+  it('saves each answer as it is given, so leaving halfway keeps them', async () => {
     const user = userEvent.setup();
     const { calls } = await renderSort();
 
-    await user.click(answer('Not much, honestly'));
-    await screen.findByText('Sales calls');
-    await user.click(answer('Revenue stops'));
-    await screen.findByText('Bookkeeping');
+    await user.click(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }));
+    await user.click(within(row('Sales calls')).getByRole('button', { name: 'Revenue stops' }));
 
-    const saves = calls.filter((call) => call.key.startsWith('PUT /api/v1/workspace/activities/'));
-    expect(saves).toHaveLength(2);
-    expect(saves[0].key).toContain('/a1/value');
-    expect(saves[0].body).toEqual({ value: 'low' });
-    expect(saves[1].key).toContain('/a2/value');
-    expect(saves[1].body).toEqual({ value: 'critical' });
+    await waitFor(() => {
+      const saves = calls.filter((c) => c.key.startsWith('PUT /api/v1/workspace/activities/'));
+      expect(saves).toHaveLength(2);
+      expect(saves[0].body).toEqual({ value: 'low' });
+      expect(saves[1].body).toEqual({ value: 'critical' });
+    });
   });
 
-  it('does not refetch the deck between cards, which would reorder it mid-sort', async () => {
+  it('marks the answer that was chosen, on the row it belongs to', async () => {
+    const user = userEvent.setup();
+    await renderSort();
+
+    await user.click(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }));
+
+    expect(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }))
+      .toHaveAttribute('aria-pressed', 'true');
+    // And nowhere else: one click must not answer three activities.
+    expect(within(row('Sales calls')).getByRole('button', { name: 'Not much, honestly' }))
+      .toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('does not refetch the list between answers, which would move rows mid-question', async () => {
     const user = userEvent.setup();
     const { calls } = await renderSort();
 
-    await user.click(answer('Not much, honestly'));
-    await screen.findByText('Sales calls');
+    await user.click(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }));
 
-    const fetches = calls.filter((call) => call.key === 'GET /api/v1/workspace/activities/unsorted');
+    const fetches = calls.filter((c) => c.key === 'GET /api/v1/workspace/activities/unsorted');
     expect(fetches).toHaveLength(1);
   });
 
-  it('leaves for the dashboard once the last card is answered', async () => {
+  it('changes what the button offers once everything has an answer', async () => {
     const user = userEvent.setup();
-    // Routed rather than rendered bare, because the thing under test is where it
-    // goes: a sort that ends on its own screen is a dead end.
+    await renderSort();
+
+    expect(screen.getByRole('button', { name: /done for now/i })).toBeInTheDocument();
+
+    for (const name of ['Invoicing', 'Sales calls', 'Bookkeeping']) {
+      await user.click(within(row(name)).getByRole('button', { name: 'Not much, honestly' }));
+    }
+
+    expect(await screen.findByRole('button', { name: /see what it costs/i })).toBeInTheDocument();
+  });
+
+  it('leaves for the dashboard whether or not everything was answered', async () => {
+    const user = userEvent.setup();
     await renderSort({}, (
       <Routes>
         <Route path="/app/sort" element={<SortPage />} />
@@ -118,43 +141,41 @@ describe('sorting what matters', () => {
       </Routes>
     ));
 
-    await user.click(answer('Not much, honestly'));
-    await screen.findByText('Sales calls');
-    await user.click(answer('Revenue stops'));
-    await screen.findByText('Bookkeeping');
-    await user.click(answer('Not much, honestly'));
+    await user.click(screen.getByRole('button', { name: /done for now/i }));
 
     expect(await screen.findByRole('heading', { name: 'Your week' })).toBeInTheDocument();
   });
 
-  it('offers a way out that says the answers are already safe', async () => {
+  it('says answers are safe, so leaving early does not feel like losing them', async () => {
     await renderSort();
 
-    expect(screen.getByRole('button', { name: /finish later — answers so far are saved/i })).toBeInTheDocument();
+    expect(screen.getByText(/saved as you give them/i)).toBeInTheDocument();
   });
 
-  it('says so when a save fails, and stays on the same card', async () => {
+  it('takes the answer back when a save fails, rather than showing one that is not stored', async () => {
     const user = userEvent.setup();
     await renderSort({
       'PUT /api/v1/workspace/activities/a1/value': failure(500, 'INTERNAL', 'Something went wrong'),
     });
 
-    await user.click(answer('Not much, honestly'));
+    await user.click(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }));
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
-    // Not advanced: the answer was not recorded, so re-asking is the honest thing.
-    expect(screen.getByText('Invoicing')).toBeInTheDocument();
-    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(row('Invoicing')).getByRole('button', { name: 'Not much, honestly' }))
+        .toHaveAttribute('aria-pressed', 'false');
+    });
+    expect(screen.getByText('0 of 3 answered')).toBeInTheDocument();
   });
 
-  it('has something to say to somebody who arrives with nothing left to sort', async () => {
+  it('has something to say to somebody with nothing left to sort', async () => {
     await renderSort({ 'GET /api/v1/workspace/activities/unsorted': success({ activities: [] }) });
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/everything is sorted/i);
     expect(screen.getByRole('button', { name: /back to your week/i })).toBeInTheDocument();
   });
 
-  it('says so when the deck cannot be loaded at all', async () => {
+  it('says so when the list cannot be loaded at all', async () => {
     await renderSort({
       'GET /api/v1/workspace/activities/unsorted': failure(500, 'INTERNAL', 'Something went wrong'),
     });

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router-dom';
 import RatePage from './RatePage.jsx';
 import { renderWithProviders } from '../../test/renderWithProviders.jsx';
 import { mockApi, success, signedInWorkspace } from '../../test/fetchMock.js';
@@ -17,14 +18,17 @@ const SAVED_RATE = {
   formulaVersion: 1, effectiveFrom: '2026-09-24T00:00:00.000Z',
 };
 
-const renderRate = async (over = {}) => {
+/** A rate already set, for the case where the form is an edit rather than a setup. */
+const EXISTING = { ...SAVED_RATE, hoursPerWeek: 40 };
+
+const renderRate = async (over = {}, ui = <RatePage />) => {
   const mock = mockApi({
     [`POST ${endpoints.auth.refresh()}`]: SESSION,
     ...signedInWorkspace({ 'GET /api/v1/workspace/rate': success({ rate: null }) }),
     'PUT /api/v1/workspace/rate': success({ rate: SAVED_RATE }, 201),
     ...over,
   });
-  const utils = await renderWithProviders(<RatePage />, { route: '/app/rate' });
+  const utils = await renderWithProviders(ui, { route: '/app/rate' });
   await screen.findByRole('heading', { level: 1 });
   return { ...utils, ...mock };
 };
@@ -84,27 +88,55 @@ describe('setting the buyback rate', () => {
     expect(Number.isInteger(sent.annualIncomeMinor)).toBe(true);
   });
 
-  it('shows the result and calls it a planning estimate', async () => {
+  it('calls the figure a planning estimate beside the figure itself', async () => {
     const user = userEvent.setup();
     await renderRate();
 
     await fill(user);
-    await user.click(screen.getByRole('button', { name: /set my rate/i }));
 
-    expect(await screen.findByRole('heading', { name: /your buyback rate/i })).toBeInTheDocument();
-    // Never a wage, never a valuation — someone who reads it as either will make
+    // It used to say this on a confirmation screen of its own, after the number
+    // was already set. It belongs where the number is being decided — and never a
+    // wage, never a valuation, because someone who reads it as either will make
     // bad decisions with it.
-    expect(screen.getByText(/not a wage and not a valuation/i)).toBeInTheDocument();
+    expect(await screen.findByText(/a planning estimate, not a wage/i)).toBeInTheDocument();
+    expect(screen.getByText(/buying an hour back stops making sense/i)).toBeInTheDocument();
   });
 
-  it('leads on to the audit rather than stopping', async () => {
+  /**
+   * Saving used to hand over a whole screen repeating the figure the form had been
+   * showing live as it was typed, then asked for one more click to carry on. In
+   * the middle of a three-step setup that is a ceremony for a number nobody had
+   * stopped looking at.
+   */
+  it('goes straight on to the audit the first time, with no screen in between', async () => {
     const user = userEvent.setup();
-    await renderRate();
+    await renderRate({}, (
+      <Routes>
+        <Route path="/app/rate" element={<RatePage />} />
+        <Route path="/app/audit" element={<h1>Where did last week go?</h1>} />
+      </Routes>
+    ));
 
     await fill(user);
     await user.click(screen.getByRole('button', { name: /set my rate/i }));
 
-    expect(await screen.findByRole('button', { name: /what last week looked like/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /where did last week go/i })).toBeInTheDocument();
+  });
+
+  it('confirms in place when an existing rate is changed, rather than moving on', async () => {
+    const user = userEvent.setup();
+    // Somebody adjusting their hours later is not in a setup flow and did not ask
+    // to go anywhere; they want to know it took.
+    await renderRate({ 'GET /api/v1/workspace/rate': success({ rate: EXISTING }) });
+
+    await user.clear(screen.getByLabelText(/hours you work in a week/i));
+    await user.type(screen.getByLabelText(/hours you work in a week/i), '30');
+    await user.click(screen.getByRole('button', { name: /update my rate/i }));
+
+    // role="status", not "alert": saving successfully is not urgent, and an
+    // assertive announcement would interrupt whatever is being read.
+    expect(await screen.findByRole('status')).toHaveTextContent(/saved\. your buyback rate is/i);
+    expect(screen.getByRole('button', { name: /update my rate/i })).toBeInTheDocument();
   });
 
   it.each([

@@ -7,16 +7,16 @@ import { useUnsortedActivities, useSetActivityValue, useRefreshWorkspace } from 
 import { paths } from '../../routes/paths.js';
 
 /**
- * One activity at a time, one question, three answers.
+ * One question about each activity, all on one screen.
  *
- * A card rather than a list, because this is the only reflective thinking the
- * product asks for and a grid of twelve dropdowns turns it into data entry. The
- * question is the same every time; only the name changes, so the reader settles
- * into a rhythm rather than re-reading.
+ * This was a deck of cards, one at a time, and it was the wrong shape: it arrives
+ * straight after the audit, so somebody has just finished filling in a form and is
+ * then made to click through five more screens before they are allowed to see the
+ * figures they came for. Being able to see how much is left, and to answer it in
+ * whatever order suits, turns a gauntlet into a list.
  *
- * Each answer saves immediately. Somebody who gives up after five has sorted five,
- * and comes back to seven — which matters, because this is the one screen people
- * will abandon halfway.
+ * Each answer still saves the moment it is given, so leaving halfway keeps every
+ * answer already made.
  */
 export default function SortPage() {
   const navigate = useNavigate();
@@ -24,24 +24,31 @@ export default function SortPage() {
   const setValue = useSetActivityValue();
   const refreshWorkspace = useRefreshWorkspace();
 
-  const [index, setIndex] = useState(0);
+  // Answers held locally as they are given: refetching the list between answers
+  // would pull rows out from under the reader mid-question.
+  const [answers, setAnswers] = useState({});
   const [saveError, setSaveError] = useState(null);
+  const [leaving, setLeaving] = useState(false);
 
   const activities = data?.activities ?? [];
-  const activity = activities[index];
+  const answered = activities.filter((a) => answers[a.id]).length;
 
   const finish = async () => {
+    setLeaving(true);
     await refreshWorkspace();
     navigate(paths.app, { replace: true });
   };
 
-  const answer = async (value) => {
+  const answer = async (id, value) => {
     setSaveError(null);
+    setAnswers((current) => ({ ...current, [id]: value }));
     try {
-      await setValue.mutateAsync({ id: activity.id, value });
-      if (index + 1 < activities.length) setIndex(index + 1);
-      else await finish();
+      await setValue.mutateAsync({ id, value });
     } catch (err) {
+      setAnswers((current) => {
+        const { [id]: _removed, ...rest } = current;
+        return rest;
+      });
       setSaveError(err?.userMessage ?? 'Could not save that. Try again.');
     }
   };
@@ -56,11 +63,10 @@ export default function SortPage() {
     );
   }
 
-  // Nothing to sort: reached by someone who already finished, or by typing the URL.
-  if (!activity) {
+  if (!activities.length) {
     return (
       <main id="main" tabIndex={-1} className="page-width app-page measure">
-          <h1 className="app-header__title">Everything is sorted</h1>
+        <h1 className="app-header__title">Everything is sorted</h1>
         <p className="app-header__subtitle mb-5">
           Every activity has an answer. New ones will appear here as you add them.
         </p>
@@ -69,49 +75,61 @@ export default function SortPage() {
     );
   }
 
+  const all = answered === activities.length;
+
   return (
-    <main id="main" tabIndex={-1} className="page-width app-page measure">
-
-      <h1 className="app-header__title">What matters?</h1>
+    <main id="main" tabIndex={-1} className="page-width app-page">
+      <h1 className="app-header__title">One more question each</h1>
       <p className="app-header__subtitle">
-        One question each, asked once. Hours and energy change every week; this barely does.
-      </p>
-
-      <p className="sort-progress" aria-live="polite">
-        {index + 1} of {activities.length}
+        If you stopped doing it for a month, what happens? Asked once — hours and energy
+        change every week, this barely does.
       </p>
 
       <Alert tone="error">{saveError}</Alert>
 
-      <section className="sort-card" aria-labelledby="sort-question">
-        <p className="sort-card__activity">{activity.name}</p>
+      <p className="sort-progress" aria-live="polite">
+        {answered} of {activities.length} answered
+      </p>
 
-        <h2 id="sort-question" className="sort-card__question">
-          If you stopped doing this for a month, what happens?
-        </h2>
+      <ul className="sort-list">
+        {activities.map((activity) => (
+          <li key={activity.id} className={`sort-item${answers[activity.id] ? ' is-answered' : ''}`}>
+            <p className="sort-item__name" id={`sort-${activity.id}`}>{activity.name}</p>
 
-        <div className="sort-card__answers">
-          {VALUE_ANSWERS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className="sort-answer"
-              disabled={setValue.isPending}
-              onClick={() => answer(option.value)}
-            >
-              <span className="sort-answer__label">{option.label}</span>
-              <span className="sort-answer__description">{option.description}</span>
-            </button>
-          ))}
-        </div>
-      </section>
+            <div className="sort-item__answers" role="group" aria-labelledby={`sort-${activity.id}`}>
+              {VALUE_ANSWERS.map((option) => {
+                const chosen = answers[activity.id] === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`sort-choice${chosen ? ' is-chosen' : ''}`}
+                    // Not disabled while saving: answering five in a row should not
+                    // mean waiting for each request before the next can be given.
+                    aria-pressed={chosen}
+                    title={option.description}
+                    onClick={() => answer(activity.id, option.value)}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <div className="sort-actions">
-        {/* Saved as you go, so leaving loses nothing. Saying so is what makes it
-            true for the reader as well as for the database. */}
-        <button type="button" className="btn btn-link" onClick={finish}>
-          Finish later — answers so far are saved
+        <button type="button" className="btn btn-primary" disabled={leaving} onClick={finish}>
+          {all ? 'See what it costs' : 'Done for now'}
         </button>
+        {/* Saved as you go, so leaving loses nothing. Saying so is what makes that
+            true for the reader as well as for the database. */}
+        <p className="sort-actions__note">
+          {all
+            ? 'Every activity has an answer.'
+            : 'Answers are saved as you give them — the rest can wait.'}
+        </p>
       </div>
     </main>
   );

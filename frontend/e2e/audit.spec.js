@@ -23,7 +23,7 @@ const step = (page, row, label) => rows(page).nth(row).getByRole('radio', { name
  * just as happily if the label were never wired to it.
  */
 const target = (page, row, label) =>
-  rows(page).nth(row).locator('.energy__step').filter({ has: page.getByRole('radio', { name: label, exact: true }) });
+  rows(page).nth(row).locator('.energy__option').filter({ has: page.getByRole('radio', { name: label, exact: true }) });
 
 test.describe('recording a week', () => {
   test('starts with one box and opens the next as soon as one is named', async ({ page }) => {
@@ -66,8 +66,8 @@ test.describe('recording a week', () => {
     ]) {
       await target(page, 0, label).click();
       await expect(step(page, 0, label)).toBeChecked();
-      // The glyph is a picture; the wording beside it is what carries the meaning.
-      await expect(rows(page).nth(0).locator('.energy__chosen')).toHaveText(shown);
+      await expect(target(page, 0, label)).toHaveClass(/is-selected/);
+      await expect(target(page, 0, label)).toHaveText(shown);
     }
   });
 
@@ -100,29 +100,21 @@ test.describe('recording a week', () => {
 test.describe('recording a week on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('keeps all five steps — the one that gets clipped is the one that matters', async ({ page }) => {
+  test('keeps every choice reachable rather than clipping one off', async ({ page }) => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app/audit');
     await rows(page).first().waitFor();
     await rows(page).nth(0).getByRole('textbox').fill('Invoicing');
 
-    const scale = rows(page).nth(0).locator('.energy__scale');
-    const { width, needed } = await scale.evaluate((n) => ({
-      width: Math.round(n.getBoundingClientRect().width),
-      needed: n.scrollWidth,
-    }));
-
-    // Squeezed into four steps' worth of room it clips the fifth, and the fifth is
-    // "energises me" — the answer the whole product exists to find more of.
-    expect(width, `scale is ${width}px but needs ${needed}px`).toBeGreaterThanOrEqual(needed);
-
-    for (const label of ['Drains me', 'Energises me']) {
+    for (const label of ['Drains me', 'Neutral', 'Energises me']) {
       const box = await target(page, 0, label).evaluate((n) => {
         const b = n.getBoundingClientRect();
-        return { w: Math.round(b.width), h: Math.round(b.height) };
+        return { w: Math.round(b.width), h: Math.round(b.height), right: Math.round(b.right) };
       });
       expect(box.h, `"${label}" is ${box.h}px tall`).toBeGreaterThanOrEqual(44);
-      expect(box.w, `"${label}" is ${box.w}px wide`).toBeGreaterThanOrEqual(44);
+      // Inside the window: the one that would fall off the end is "energises me",
+      // the answer the whole product exists to find more of.
+      expect(box.right, `"${label}" ends at ${box.right}px`).toBeLessThanOrEqual(390);
     }
   });
 

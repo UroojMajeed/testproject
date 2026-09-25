@@ -10,63 +10,91 @@ import { stubApi, collectConsoleErrors, DASHBOARD, UNSORTED, quadrant } from './
  * most of these answers will be given.
  */
 
-const answer = (page, name) => page.getByRole('button', { name });
+
+const item = (page, name) => page.locator('.sort-item').filter({ hasText: name });
 
 test.describe('sorting what matters', () => {
-  test('a first-timer is sent to the sort, and answering works through the deck', async ({ page }) => {
+  test('a first-timer is sent here, and sees the whole list at once', async ({ page }) => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
-
     await page.goto('/app');
 
     // The gate, not a link: the matrix would otherwise be empty on the one visit
     // that decides whether anybody comes back.
     await expect(page).toHaveURL(/\/app\/sort$/);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/what matters/i);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/one more question each/i);
 
-    await expect(page.getByText('1 of 2')).toBeVisible();
-    await expect(page.getByText('Bookkeeping')).toBeVisible();
-
-    await answer(page, /not much, honestly/i).click();
-
-    await expect(page.getByText('2 of 2')).toBeVisible();
-    await expect(page.getByText('Social posts')).toBeVisible();
+    // One screen, not one screen per activity — this arrives straight after the
+    // audit, and a deck of cards there is a gauntlet.
+    await expect(page.locator('.sort-item')).toHaveCount(2);
+    await expect(page.getByText('0 of 2 answered')).toBeVisible();
   });
 
-  test('the last answer ends on the dashboard, not on an empty card', async ({ page }) => {
+  test('answering marks the row and moves the count', async ({ page }) => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
     await page.goto('/app/sort');
 
-    await answer(page, /not much, honestly/i).click();
-    await expect(page.getByText('Social posts')).toBeVisible();
-    await answer(page, /revenue stops/i).click();
+    await item(page, 'Bookkeeping').getByRole('button', { name: 'Not much, honestly' }).click();
+
+    await expect(item(page, 'Bookkeeping').getByRole('button', { name: 'Not much, honestly' }))
+      .toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('1 of 2 answered')).toBeVisible();
+    // One click must not answer two activities.
+    await expect(item(page, 'Social posts').getByRole('button', { name: 'Not much, honestly' }))
+      .toHaveAttribute('aria-pressed', 'false');
+  });
+
+  test('leaving lands on the dashboard whether or not everything was answered', async ({ page }) => {
+    await stubApi(page, { signedIn: true, unsorted: UNSORTED });
+    await page.goto('/app/sort');
+
+    await item(page, 'Bookkeeping').getByRole('button', { name: 'Revenue stops' }).click();
+    await page.getByRole('button', { name: /done for now/i }).click();
 
     await expect(page).toHaveURL(/\/app$/);
   });
 
-  test('each answer is a real target, and reachable by keyboard alone', async ({ page }) => {
+  test('the button says what is left to do', async ({ page }) => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
     await page.goto('/app/sort');
 
-    const first = answer(page, /revenue stops/i);
+    await expect(page.getByRole('button', { name: /done for now/i })).toBeVisible();
+
+    for (const name of ['Bookkeeping', 'Social posts']) {
+      await item(page, name).getByRole('button', { name: 'Revenue stops' }).click();
+    }
+
+    await expect(page.getByRole('button', { name: /see what it costs/i })).toBeVisible();
+  });
+
+  test('every answer is a real target, and reachable by keyboard alone', async ({ page }) => {
+    await stubApi(page, { signedIn: true, unsorted: UNSORTED });
+    await page.goto('/app/sort');
+
+    const first = item(page, 'Bookkeeping').getByRole('button', { name: 'Revenue stops' });
     const box = await first.boundingBox();
     expect(box.height).toBeGreaterThanOrEqual(44);
 
     await first.focus();
-    // Focus has to be visible on a card this large, or a keyboard user loses their
-    // place between three answers that look alike.
-    const ring = await first.evaluate((node) => getComputedStyle(node).boxShadow);
+    const ring = await first.evaluate((n) => getComputedStyle(n).boxShadow);
     expect(ring).not.toBe('none');
 
     await page.keyboard.press('Enter');
-    await expect(page.getByText('Social posts')).toBeVisible();
+    await expect(first).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('one question at a time — the other cards are not on the page', async ({ page }) => {
+  test('the rows stack rather than squeeze on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
     await page.goto('/app/sort');
+    await page.locator('.sort-item').first().waitFor();
 
-    await expect(page.getByText('Bookkeeping')).toBeVisible();
-    await expect(page.getByText('Social posts')).toHaveCount(0);
+    const name = await item(page, 'Bookkeeping').locator('.sort-item__name').boundingBox();
+    const answers = await item(page, 'Bookkeeping').locator('.sort-item__answers').boundingBox();
+    expect(answers.y).toBeGreaterThan(name.y + name.height - 2);
+
+    const over = await page.evaluate(() =>
+      document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(over, `overflows by ${over}px`).toBeLessThanOrEqual(0);
   });
 });
 

@@ -86,9 +86,21 @@ export default function RatePage() {
     return { effective: Math.round(income / hours), buyback: Math.round(income / hours / 4) };
   }, [values.annualIncome, values.hoursPerWeek, values.weeksPerYear]);
 
+  /**
+   * First time through, go on. Afterwards, confirm in place.
+   *
+   * Saving used to hand over a whole screen that repeated the figure the form had
+   * already been showing live as it was typed, then asked for one more click to
+   * carry on — a ceremony for a number nobody had stopped looking at. Somebody
+   * setting their rate for the first time is in the middle of a three-step setup
+   * and wants the next step; somebody adjusting it later wants to know it took.
+   */
   const { pending, formError, run } = useSubmit({
     setError,
-    onSuccess: (result) => setSaved(result.rate),
+    onSuccess: (result) => {
+      if (current) setSaved(result.rate);
+      else navigate(paths.audit, { replace: true });
+    },
   });
 
   const onSubmit = (form) =>
@@ -109,26 +121,6 @@ export default function RatePage() {
    */
   if (rateLoading) return <FullPageSpinner label="Loading your rate" />;
 
-  if (saved) {
-    return (
-      <main id="main" tabIndex={-1} className="page-width app-page">
-          <h1 className="app-header__title">Your buyback rate</h1>
-
-        <p className="rate-figure numeric">{formatMoney(saved.rateMinorPerHour, saved.currency)}<span className="rate-figure__unit"> an hour</span></p>
-
-        <Alert tone="info">
-          A planning estimate, not a wage and not a valuation. It is the line above
-          which buying an hour back stops making sense: if someone else will do a
-          task for less than this, the trade is worth making.
-        </Alert>
-
-        <button type="button" className="btn btn-primary mt-4" onClick={() => navigate(paths.audit)}>
-          Next: what last week looked like
-        </button>
-      </main>
-    );
-  }
-
   return (
     <main id="main" tabIndex={-1} className="page-width app-page measure">
 
@@ -139,6 +131,13 @@ export default function RatePage() {
       </p>
 
       <Alert tone="error">{formError}</Alert>
+
+      {saved ? (
+        <Alert tone="success">
+          Saved. Your buyback rate is{' '}
+          <strong className="numeric">{formatMoney(saved.rateMinorPerHour, saved.currency)}</strong> an hour.
+        </Alert>
+      ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/*
@@ -193,7 +192,15 @@ export default function RatePage() {
             <p className="rate-preview__line rate-preview__line--strong">
               Your buyback rate is <strong className="numeric">{formatMoney(preview.buyback, currency)}</strong> an hour
             </p>
-            <p className="rate-preview__note">A quarter of what you earn, which is the conservative end on purpose.</p>
+            {/*
+              This sentence used to live on a confirmation screen of its own. It
+              belongs next to the figure it is about — read while the number is
+              being decided, not after it is already set.
+            */}
+            <p className="rate-preview__note">
+              A quarter of what you earn, which is the conservative end on purpose. A planning
+              estimate, not a wage: it is the line above which buying an hour back stops making sense.
+            </p>
           </div>
         ) : null}
 

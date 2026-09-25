@@ -60,7 +60,7 @@ test.describe('the frame', () => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
     await page.goto('/app/sort');
 
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/what matters/i);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/one more question each/i);
     await expect(sections(page)).toHaveCount(0);
   });
 });
