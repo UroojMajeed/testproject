@@ -43,10 +43,18 @@ export function formatWeekRange(startISO, endISO) {
   if (!startISO || !endISO) return '';
   const start = new Date(`${startISO}T00:00:00`);
   const end = new Date(`${endISO}T00:00:00`);
-  const sameMonth = start.getMonth() === end.getMonth();
-
-  const dayOnly = new Intl.DateTimeFormat(undefined, { day: 'numeric' });
-  const full = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' });
-
-  return `${sameMonth ? dayOnly.format(start) : full.format(start)} – ${full.format(end)}`;
+  /*
+   * formatRange, not two formats joined by a dash.
+   *
+   * The hand-rolled version dropped the month from the start date whenever both
+   * ends shared one, which only reads correctly where the day comes first. In a
+   * month-first locale 21–27 September came out as "21 – September 27". Worse,
+   * a week spanning two months lost the first month altogether: 28 September to
+   * 4 October rendered as "28 – October 4", which is a different week.
+   *
+   * Intl knows where the month goes and which parts are safe to elide, in every
+   * locale, which is the whole reason it exists.
+   */
+  return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
+    .formatRange(start, end);
 }

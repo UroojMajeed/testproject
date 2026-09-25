@@ -577,6 +577,11 @@ a:hover .logo { color: var(--fg-default); }
 
 .app-page { padding-block: var(--space-6) var(--space-8); max-width: 48rem; }
 
+// A list of rows to fill in, not prose. At the reading measure the activity name
+// — the one thing on the row that varies and the one worth reading — was the
+// first thing to be truncated, which is exactly backwards.
+.app-page--wide { max-width: 62rem; }
+
 .app-header {
   display: flex;
   flex-wrap: wrap;
@@ -692,30 +697,48 @@ a:hover .logo { color: var(--fg-default); }
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+// The waiting row is an invitation, not a record. Drawn lighter so a list of six
+// activities does not look like a list of seven.
+.audit-row.is-empty {
+  background: transparent;
+  border-style: dashed;
 }
 
 .audit-row__top {
   display: grid;
-  // Name takes the room, hours needs only a little. On a phone they stack, because
-  // two controls and a unit across 320px is nobody's idea of fast.
-  grid-template-columns: 1fr 7rem;
+  // Name, hours, how it felt, and the way out — one activity on one line, which
+  // is what makes a dozen of them scannable rather than a scroll.
+  grid-template-columns: minmax(0, 1fr) 6rem auto auto;
   gap: var(--space-3);
-  align-items: start;
+  align-items: center;
 }
 
-@media (max-width: 30rem) {
-  .audit-row__top { grid-template-columns: 1fr; }
+// Hold the last two columns open while a row is still unnamed, so naming it does
+// not make the boxes beside it jump narrower.
+.audit-row__spacer { display: block; width: 17rem; }
+.audit-row__spacer-remove { display: block; width: 4.5rem; }
+
+@media (max-width: 58rem) {
+  .audit-row__top { grid-template-columns: minmax(0, 1fr) 6rem; }
+  // Under the two boxes rather than beside them, sharing the line with Remove.
+  .energy { grid-column: 1; }
+  .audit-row__remove { grid-column: 2; justify-self: end; align-self: start; }
+  .audit-row__spacer,
+  .audit-row__spacer-remove { display: none; }
 }
 
-.audit-row__actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--space-2);
+// Below this the scale and Remove cannot share a line without squeezing one of
+// them, so the scale takes the width and Remove goes under it.
+@media (max-width: 24rem) {
+  .energy { grid-column: 1 / -1; }
+  .audit-row__remove { grid-column: 1 / -1; }
 }
 
 .audit-row__name,
-.audit-row__hours { margin: 0; display: block; }
+.audit-row__hours { margin: 0; display: block; min-width: 0; }
 
 .audit-row__remove {
   --bs-btn-color: var(--fg-subtle);
@@ -723,61 +746,86 @@ a:hover .logo { color: var(--fg-default); }
   white-space: nowrap;
 }
 
-.energy { margin: var(--space-4) 0 0; padding: 0; border: 0; }
-
-.energy__legend {
-  font-size: var(--text-sm);
-  color: var(--fg-subtle);
-  margin-bottom: var(--space-2);
+.energy {
+  margin: 0;
   padding: 0;
-  float: none;  // Bootstrap floats legends, which breaks the grid below it
-  width: auto;
+  border: 0;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;  // the wording drops below the scale before the scale gives way
+  gap: var(--space-2) var(--space-3);
 }
 
-.energy__options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+// One connected scale rather than five wrapping pills. Read by position and
+// shape; the wording appears once underneath instead of five times per row.
+.energy__scale {
+  display: inline-flex;
+  // Never compressed. A five-step control squeezed into four steps' worth of room
+  // clips the fifth, and the one that gets cut is "energises me" — the answer the
+  // whole product is trying to find more of.
+  flex: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-surface);
+}
 
-.energy__option {
+.energy__step {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  // 44px so it is a real target on a phone, where most of these get filled in.
+  justify-content: center;
+  // 44px each way, so every step is a real target on the phone where most of
+  // these get filled in.
+  min-width: var(--tap-target);
   min-height: var(--tap-target);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  color: var(--fg-muted);
+  color: var(--fg-subtle);
   cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+  border-right: 1px solid var(--border-subtle);
+  transition: background-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
 
-  &:hover { border-color: var(--border-strong); color: var(--fg-default); }
+  &:last-child { border-right: 0; }
+  &:hover { background: var(--bg-sunken); color: var(--fg-default); }
 
-  // The selected state is a filled mark plus a heavier border, never colour alone.
+  // Selected is a filled step and a darker glyph, not a colour swap alone — and
+  // the bar's own height and direction say which end of the scale it is.
   &.is-selected {
-    border-color: var(--border-strong);
+    background: var(--bg-sunken);
     color: var(--fg-default);
-    font-weight: var(--weight-medium);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
   }
 
-  // The keyboard ring has to follow the hidden radio out to the label.
   &:has(input:focus-visible) {
     box-shadow: 0 0 0 2px var(--focus-halo), 0 0 0 4px var(--focus-ring);
+    // Above its neighbours, or the ring is clipped by the next step's background.
+    position: relative;
+    z-index: 1;
   }
 }
 
-.energy__mark {
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 50%;
-  border: 1px solid var(--border-strong);
-  flex: none;
+.energy__bar { width: 1.25rem; height: 1.25rem; fill: currentColor; }
+
+// Present on every step, faint: it is the line the column stands on, not a mark
+// of its own, so it must not compete with the column above or below it.
+.energy__baseline { fill: var(--border-default); opacity: 0.28; }
+
+.energy__step[data-energy='-2'].is-selected,
+.energy__step[data-energy='-1'].is-selected { color: var(--fg-danger); }
+.energy__step[data-energy='1'].is-selected,
+.energy__step[data-energy='2'].is-selected { color: var(--fg-success); }
+
+// Beside the scale, not under it: the wording is what makes the glyph mean
+// something, and a row that stays one line stays scannable.
+.energy__chosen {
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+  white-space: nowrap;
 }
 
-.energy__option.is-selected .energy__mark { background: var(--fg-default); }
-.energy__option[data-energy='-2'].is-selected .energy__mark,
-.energy__option[data-energy='-1'].is-selected .energy__mark { background: var(--fg-danger); border-color: var(--fg-danger); }
-.energy__option[data-energy='1'].is-selected .energy__mark,
-.energy__option[data-energy='2'].is-selected .energy__mark { background: var(--fg-success); border-color: var(--fg-success); }
+.energy__chosen[data-energy='-2'],
+.energy__chosen[data-energy='-1'] { color: var(--fg-danger); }
+.energy__chosen[data-energy='1'],
+.energy__chosen[data-energy='2'] { color: var(--fg-success); }
 
 .audit-total {
   display: flex;
@@ -1120,7 +1168,21 @@ a:hover .logo { color: var(--fg-default); }
 // of markup. Semantic tokens only, so the dark theme needs nothing here.
 
 // The bare first run: no frame, just the wordmark over the funnel.
-.bare-mark { padding-block: var(--space-6) 0; margin: 0 0 var(--space-5); }
+/*
+ * The funnel's wordmark.
+ *
+ * `margin` as a shorthand here used to wipe .page-width's `margin-inline: auto`,
+ * because this rule is later in the file — so the mark sat flush against the
+ * window while the page under it was centred. Only the block margin is set now,
+ * and the width matches .app-page rather than the wider page gutter, so the mark
+ * lines up with the words beneath it instead of floating off to their left.
+ */
+.bare-mark {
+  max-width: 48rem;
+  margin-inline: auto;
+  margin-block: 0 var(--space-5);
+  padding-block: var(--space-6) 0;
+}
 
 .shell {
   display: grid;

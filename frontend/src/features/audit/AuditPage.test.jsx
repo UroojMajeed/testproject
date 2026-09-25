@@ -42,7 +42,14 @@ describe('recalling last week', () => {
     // a literal: the exact wording is the reader's locale talking.
     const range = formatWeekRange('2026-09-21', '2026-09-27');
     expect(range).toMatch(/21/);
-    expect(screen.getByText(new RegExp(range.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
+    expect(range).toMatch(/27/);
+    // Intl separates a range with thin spaces around the dash, which is the right
+    // typography and not what testing-library's normalised text will contain — so
+    // compare whitespace-insensitively rather than weakening the assertion.
+    const pattern = range
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s+');
+    expect(screen.getByText(new RegExp(pattern))).toBeInTheDocument();
   });
 
   it('says rough hours are fine', async () => {
@@ -51,10 +58,56 @@ describe('recalling last week', () => {
     expect(screen.getByText(/recall, not a timesheet/i)).toBeInTheDocument();
   });
 
-  it('starts with empty rows to type into', async () => {
+  it('starts with one box, not a stack of identical empty ones', async () => {
     await renderAudit();
 
-    expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(3);
+    // Three empty cards is a form to be filled in; one is a question to answer.
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('opens the next box as soon as one is named, with no button to reach for', async () => {
+    const user = userEvent.setup();
+    await renderAudit();
+
+    await user.type(within(firstRow()).getByRole('textbox'), 'Invoicing');
+
+    await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(2));
+    expect(within(screen.getAllByRole('listitem')[1]).getByRole('textbox')).toHaveValue('');
+  });
+
+  it('keeps exactly one empty box at the end, not one per keystroke', async () => {
+    const user = userEvent.setup();
+    await renderAudit();
+
+    await user.type(within(firstRow()).getByRole('textbox'), 'Invoicing');
+    await user.type(within(screen.getAllByRole('listitem')[1]).getByRole('textbox'), 'Email');
+
+    await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(3));
+  });
+
+  it('offers no Remove on a box with nothing in it', async () => {
+    const user = userEvent.setup();
+    await renderAudit();
+
+    // Remove on an empty box offers to delete nothing, and the trailing box is
+    // always empty — so every list used to end with a dead action.
+    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
+
+    await user.type(within(firstRow()).getByRole('textbox'), 'Invoicing');
+
+    expect(await screen.findByRole('button', { name: /remove invoicing/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(1);
+  });
+
+  it('never leaves the list with nothing to type into', async () => {
+    const user = userEvent.setup();
+    await renderAudit();
+
+    await user.type(within(firstRow()).getByRole('textbox'), 'Invoicing');
+    await user.click(await screen.findByRole('button', { name: /remove invoicing/i }));
+
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThanOrEqual(1);
+    expect(within(firstRow()).getByRole('textbox')).toHaveValue('');
   });
 
   it('asks how it felt only once there is an activity to ask about', async () => {
@@ -73,13 +126,36 @@ describe('recalling last week', () => {
     const user = userEvent.setup();
     await renderAudit();
 
-    const rows = screen.getAllByRole('listitem');
-    await user.type(within(rows[0]).getByRole('textbox'), 'Invoicing');
-    await user.type(within(rows[0]).getByRole('spinbutton'), '4');
-    await user.type(within(rows[1]).getByRole('textbox'), 'Email');
-    await user.type(within(rows[1]).getByRole('spinbutton'), '2.5');
+    await user.type(within(firstRow()).getByRole('textbox'), 'Invoicing');
+    await user.type(within(firstRow()).getByRole('spinbutton'), '4');
+    // The second box appears because the first was named, not because a button
+    // was pressed.
+    const second = screen.getAllByRole('listitem')[1];
+    await user.type(within(second).getByRole('textbox'), 'Email');
+    await user.type(within(second).getByRole('spinbutton'), '2.5');
 
     expect(await screen.findByText('6h 30m')).toBeInTheDocument();
+  });
+
+  it('says a filed week is filed, rather than asking to finish it again', async () => {
+    await renderAudit({
+      'GET /api/v1/workspace/audits/current': success({
+        week: {
+          ...WEEK,
+          status: 'complete',
+          completedAt: '2026-09-25T10:00:00.000Z',
+          entries: [{ activityId: 'a1', estimatedMinutes: 240, energy: -2 }],
+          totalEstimatedMinutes: 240,
+        },
+        suggestions: [],
+        isNew: false,
+      }),
+    });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/this week is filed/i);
+    expect(screen.getByRole('button', { name: /save the changes/i })).toBeInTheDocument();
+    // There is nothing to come back to: it is already saved.
+    expect(screen.queryByRole('button', { name: /come back to it/i })).not.toBeInTheDocument();
   });
 
   it('sends hours as whole minutes, because that is what the API stores', async () => {

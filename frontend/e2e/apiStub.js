@@ -97,7 +97,7 @@ export const ACTIVITIES = [
  *   one — composed here rather than intercepted, because a second page.route on
  *   the same pattern cannot reach this one's answer.
  */
-export async function stubApi(page, { signedIn = false, onboarding = {}, unsorted = [], dashboard = DASHBOARD } = {}) {
+export async function stubApi(page, { signedIn = false, onboarding = {}, unsorted = [], dashboard = DASHBOARD, currentWeekFiled = false } = {}) {
   const state = {
     session: signedIn,
     failedLogins: 0,
@@ -248,10 +248,16 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
         return route.fulfill(ok({
           week: {
             id: 'w1', weekStarting: '2026-09-21', weekEnding: '2026-09-27', timezone: 'UTC',
-            status: 'draft', isTypical: true, completedAt: null, entries: [], totalEstimatedMinutes: 0,
+            // A week already recorded looks nothing like a week never started, and
+            // the screen has to say which one it is.
+            status: currentWeekFiled ? 'complete' : 'draft',
+            isTypical: true,
+            completedAt: currentWeekFiled ? '2026-09-25T10:00:00.000Z' : null,
+            entries: currentWeekFiled ? [{ activityId: 'a1', estimatedMinutes: 240, energy: -2 }] : [],
+            totalEstimatedMinutes: currentWeekFiled ? 240 : 0,
           },
           suggestions: [],
-          isNew: true,
+          isNew: !currentWeekFiled,
         }));
 
       case '/api/v1/workspace/dashboard':

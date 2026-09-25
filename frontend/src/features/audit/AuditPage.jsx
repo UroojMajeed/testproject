@@ -38,6 +38,9 @@ export default function AuditPage() {
 
   const week = audit.data?.week;
   const save = useSaveAudit(week?.weekStarting);
+  // Returning to a week already recorded. Without saying so the screen offered to
+  // "finish" a week that was finished, and looked identical to never having filed.
+  const filed = week?.status === 'complete';
 
   const names = useMemo(
     () => new Map((activities.data?.activities ?? []).map((a) => [a.id, a.name])),
@@ -69,12 +72,26 @@ export default function AuditPage() {
         energy: null,
       }));
 
-    setRows(source.length ? source : [newRow(), newRow(), newRow()]);
+    // One row, not three. Three identical empty cards is a form to be filled in;
+    // one is a question to be answered, and the next appears as soon as it is.
+    // A seeded week gets a trailing empty row for the same reason — and because
+    // without it a week already filed had nowhere to add anything.
+    setRows(source.length ? [...source, newRow()] : [newRow()]);
     setIsTypical(week.isTypical);
   }, [audit.data, activities.data, week, names, rows.length]);
 
+  /**
+   * Patch a row, and keep exactly one empty row at the end.
+   *
+   * Naming the last activity means there is probably another, so the next box is
+   * already there to type into — no reaching for a button between every entry.
+   */
   const update = (key, patch) =>
-    setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+    setRows((current) => {
+      const next = current.map((row) => (row.key === key ? { ...row, ...patch } : row));
+      const last = next[next.length - 1];
+      return last && last.activityName.trim() ? [...next, newRow()] : next;
+    });
 
   const filled = rows.filter((row) => row.activityName.trim() && row.hours !== '');
   const incomplete = filled.filter((row) => row.energy === null);
@@ -115,12 +132,14 @@ export default function AuditPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="page-width app-page">
+    <main id="main" tabIndex={-1} className="page-width app-page app-page--wide">
 
-      <h1 className="app-header__title">What did last week go on?</h1>
+      <h1 className="app-header__title">{filed ? 'This week is filed' : 'Where did last week go?'}</h1>
       <p className="app-header__subtitle mb-2">
-        {formatWeekRange(week.weekStarting, week.weekEnding)} — about a dozen things you did more than once.
-        Rough hours are fine; this is recall, not a timesheet.
+        {formatWeekRange(week.weekStarting, week.weekEnding)}
+        {filed
+          ? ' — already recorded. Change anything you got wrong and save it again.'
+          : ' — about a dozen things you did more than once. Rough hours are fine; this is recall, not a timesheet.'}
       </p>
 
       <Alert tone="error">{formError}</Alert>
@@ -135,7 +154,10 @@ export default function AuditPage() {
 
       <ol className="audit-rows">
         {rows.map((row, index) => (
-          <li key={row.key} className="audit-row">
+          <li
+            key={row.key}
+            className={`audit-row${row.activityName.trim() || row.hours !== '' ? '' : ' is-empty'}`}
+          >
             <div className="audit-row__top">
               <label className="audit-row__name">
                 <span className="visually-hidden">Activity {index + 1}</span>
@@ -172,40 +194,48 @@ export default function AuditPage() {
                 </div>
               </label>
 
-            </div>
-
-            {row.activityName.trim() ? (
-              <EnergyPicker
-                name={row.key}
-                value={row.energy}
-                activityLabel={row.activityName}
-                onChange={(energy) => update(row.key, { energy })}
-              />
-            ) : null}
+              {/*
+                In the same grid as the name and the hours, so one activity reads
+                as one line. It used to sit in a block of its own underneath, which
+                made every row four times as tall and a dozen of them a scroll.
+              */}
+              {row.activityName.trim() ? (
+                <EnergyPicker
+                  name={row.key}
+                  value={row.energy}
+                  activityLabel={row.activityName}
+                  onChange={(energy) => update(row.key, { energy })}
+                />
+              ) : <span className="audit-row__spacer" />}
 
             {/*
-              Last in the DOM, and last visually, so the two agree.
-              It used to sit beside the hours field, which put "Remove" between the
-              hours and the energy choice in the tab order — a keyboard user filling
-              in a row met the delete button halfway through.
+              Only for a row with something in it. Remove on an empty box offers to
+              delete nothing, and the trailing box is always empty — so every list
+              ended with an action that could not do anything.
+
+              Last in the DOM, and last visually, so the two agree. It used to sit
+              beside the hours field, which put "Remove" between the hours and the
+              energy choice in the tab order — a keyboard user filling in a row met
+              the delete button halfway through.
             */}
-            <div className="audit-row__actions">
-              <button
-                type="button"
-                className="btn btn-link audit-row__remove"
-                onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
-              >
-                <span className="visually-hidden">Remove {row.activityName || `activity ${index + 1}`}</span>
-                <span aria-hidden="true">Remove</span>
-              </button>
+              {row.activityName.trim() || row.hours !== '' ? (
+                <button
+                  type="button"
+                  className="btn btn-link audit-row__remove"
+                  onClick={() => setRows((current) => {
+                    const kept = current.filter((r) => r.key !== row.key);
+                    // Never leave the list with nothing to type into.
+                    return kept.length ? kept : [newRow()];
+                  })}
+                >
+                  <span className="visually-hidden">Remove {row.activityName || `activity ${index + 1}`}</span>
+                  <span aria-hidden="true">Remove</span>
+                </button>
+              ) : <span className="audit-row__spacer-remove" />}
             </div>
           </li>
         ))}
       </ol>
-
-      <button type="button" className="btn btn-outline-secondary" onClick={() => setRows((c) => [...c, newRow()])}>
-        Add another activity
-      </button>
 
       <div className="audit-total" aria-live="polite">
         <span className="audit-total__label">Accounted for so far</span>
@@ -225,11 +255,14 @@ export default function AuditPage() {
       <div className="audit-actions">
         <SubmitButton type="button" pending={pending} pendingLabel="Saving…"
           className="audit-actions__primary" onClick={() => submit('complete')}>
-          Finish the week
+          {filed ? 'Save the changes' : 'Finish the week'}
         </SubmitButton>
-        <button type="button" className="btn btn-link" disabled={pending} onClick={() => submit('draft')}>
-          Save and come back to it
-        </button>
+        {/* A filed week has nothing to come back to: it is already saved. */}
+        {filed ? null : (
+          <button type="button" className="btn btn-link" disabled={pending} onClick={() => submit('draft')}>
+            Save and come back to it
+          </button>
+        )}
       </div>
     </main>
   );
