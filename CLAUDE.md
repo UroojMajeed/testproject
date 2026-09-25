@@ -27,7 +27,7 @@ sign in → buyback rate → first audit (last week) → dashboard → every Fri
 
 The weekly audit asks only for hours and energy — fast, factual recall.
 
-**Step 3 — what matters.** In progress. One question per activity, asked **once**:
+**Step 3 — what matters.** Done. One question per activity, asked **once**:
 
 > If you stopped doing this for a month, what happens?
 > Revenue stops · Something slips · Not much
@@ -46,6 +46,15 @@ that breaks the business if it goes to the wrong person.
 Value is asked once because it barely changes; hours and energy are asked weekly
 because they do. That difference in cadence is the reason for the split, and it is
 what keeps the Friday habit to two questions.
+
+The flow is now:
+
+```
+sign in → buyback rate → first audit → first sort → dashboard → every Friday
+```
+
+Only the *first* sort gates. After that an unsorted activity is a prompt on the
+dashboard, never a wall in front of figures somebody already has.
 
 Deliberately **not** in step 3, each being a step of its own: bundling activities
 into a role, the hiring roadmap, playbooks, delegation tracking, any AI, calendar
