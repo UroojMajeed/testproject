@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../../components/ui/Logo.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
 import { VALUE_ANSWERS } from './value.js';
@@ -61,8 +60,7 @@ export default function SortPage() {
   if (!activity) {
     return (
       <main id="main" tabIndex={-1} className="page-width app-page measure">
-        <p className="mb-5"><Logo /></p>
-        <h1 className="app-header__title">Everything is sorted</h1>
+          <h1 className="app-header__title">Everything is sorted</h1>
         <p className="app-header__subtitle mb-5">
           Every activity has an answer. New ones will appear here as you add them.
         </p>
@@ -73,7 +71,6 @@ export default function SortPage() {
 
   return (
     <main id="main" tabIndex={-1} className="page-width app-page measure">
-      <p className="mb-5"><Logo /></p>
 
       <h1 className="app-header__title">What matters?</h1>
       <p className="app-header__subtitle">

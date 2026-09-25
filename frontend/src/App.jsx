@@ -7,6 +7,7 @@ import RegisterPage from './features/auth/pages/RegisterPage.jsx';
 import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './features/auth/pages/ResetPasswordPage.jsx';
 import { OnboardingGate } from './routes/OnboardingGate.jsx';
+import { AppLayout } from './components/layout/AppLayout.jsx';
 import DashboardPage from './features/dashboard/DashboardPage.jsx';
 import RatePage from './features/rate/RatePage.jsx';
 import AuditPage from './features/audit/AuditPage.jsx';
@@ -46,10 +47,17 @@ export default function App() {
             the second question only makes sense once the first is yes.
           */}
           <Route element={<OnboardingGate />}>
-            <Route path={paths.app} element={<DashboardPage />} />
-            <Route path={paths.rate} element={<RatePage />} />
-            <Route path={paths.audit} element={<AuditPage />} />
-            <Route path={paths.sort} element={<SortPage />} />
+            {/*
+              AppLayout is the frame: the sidebar, the account controls and the
+              wordmark, once, around whichever page is showing. It renders bare
+              during the first run — see the comment there for why.
+            */}
+            <Route element={<AppLayout />}>
+              <Route path={paths.app} element={<DashboardPage />} />
+              <Route path={paths.rate} element={<RatePage />} />
+              <Route path={paths.audit} element={<AuditPage />} />
+              <Route path={paths.sort} element={<SortPage />} />
+            </Route>
           </Route>
         </Route>
 

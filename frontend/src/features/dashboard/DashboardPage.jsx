@@ -1,6 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Logo } from '../../components/ui/Logo.jsx';
-import { ThemeToggle } from '../../components/ui/ThemeToggle.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
 import { useDashboard, useWorkspaceState } from '../../lib/api/hooks.js';
@@ -25,7 +23,7 @@ import { paths } from '../../routes/paths.js';
 export default function DashboardPage() {
   const { data, isPending, isError, error } = useDashboard();
   const { data: state } = useWorkspaceState();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   if (isPending) return <FullPageSpinner label="Adding up your week" />;
 
@@ -42,14 +40,6 @@ export default function DashboardPage() {
 
   return (
     <main id="main" tabIndex={-1} className="page-width app-page">
-      <div className="site-bar">
-        <Logo />
-        <div className="site-bar__nav">
-          <ThemeToggle />
-          <button type="button" className="btn btn-outline-secondary" onClick={logout}>Sign out</button>
-        </div>
-      </div>
-
       <header className="app-header">
         <div>
           <h1 className="app-header__title">Hello, {user?.name?.split(' ')[0]}</h1>

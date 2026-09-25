@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Logo } from '../../components/ui/Logo.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { SubmitButton } from '../../components/ui/SubmitButton.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
@@ -117,7 +116,6 @@ export default function AuditPage() {
 
   return (
     <main id="main" tabIndex={-1} className="page-width app-page">
-      <p className="mb-5"><Logo /></p>
 
       <h1 className="app-header__title">What did last week go on?</h1>
       <p className="app-header__subtitle mb-2">

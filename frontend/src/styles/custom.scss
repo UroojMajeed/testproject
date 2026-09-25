@@ -1114,3 +1114,179 @@ a:hover .logo { color: var(--fg-default); }
   font-size: var(--text-sm);
   color: var(--fg-subtle);
 }
+
+// ── The frame ───────────────────────────────────────────────────────────────
+// A left rail on a desk, a bar along the bottom on a phone, drawn from one piece
+// of markup. Semantic tokens only, so the dark theme needs nothing here.
+
+// The bare first run: no frame, just the wordmark over the funnel.
+.bare-mark { padding-block: var(--space-6) 0; margin: 0 0 var(--space-5); }
+
+.shell {
+  display: grid;
+  // The rail is three stacked pieces in one column rather than one box, so the
+  // same three can be dealt out differently on a phone without a second copy in
+  // the markup. They share a background and a border, which is what makes them
+  // read as one rail.
+  grid-template-columns: 15rem minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+.shell__brand,
+.shell__nav,
+.shell__account {
+  grid-column: 1;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.shell__brand {
+  grid-row: 1;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+}
+
+.shell__nav {
+  grid-row: 2;
+  padding: 0 var(--space-3);
+}
+
+.shell__account {
+  grid-row: 3;
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.shell__who {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--fg-subtle);
+}
+
+.shell__who strong { font-weight: var(--weight-medium); color: var(--fg-muted); }
+
+.shell__account-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.shell__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.shell__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  color: var(--fg-muted);
+  text-decoration: none;
+  // The rule that marks the current section. Transparent rather than absent, so
+  // the label does not shift sideways by three pixels when it becomes current.
+  border-left: 3px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease);
+
+  &:hover {
+    background: var(--bg-sunken);
+    color: var(--fg-default);
+    text-decoration: none;
+  }
+
+  // Weight and a rule, never colour alone — and aria-current says it outright for
+  // anyone who cannot see either.
+  &.is-current {
+    color: var(--fg-default);
+    font-weight: var(--weight-semibold);
+    background: var(--bg-sunken);
+    border-left-color: var(--accent-solid);
+  }
+}
+
+.shell__icon { width: 1.125rem; height: 1.125rem; flex: none; }
+
+.shell__body {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  min-width: 0;  // or a wide table inside stretches the column instead of scrolling
+}
+
+// The frame supplies the outer gutter, so the page inside stops centring itself
+// against the whole viewport and sits against the rail instead.
+.shell__body .page-width { margin-inline: 0; }
+
+// ── The phone ───────────────────────────────────────────────────────────────
+// Under 48rem the rail would eat a third of the screen, so the same three links
+// become a bar along the bottom, where a thumb reaches, and the wordmark and the
+// account controls share a bar across the top.
+
+@media (max-width: 48rem) {
+  .shell {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .shell__brand,
+  .shell__account {
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border-right: 0;
+    border-top: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .shell__brand { grid-column: 1; }
+  .shell__account { grid-column: 2; justify-content: flex-end; }
+
+  // Already said by the wordmark and the sign-out button beside it; repeating the
+  // name costs a row of a screen that has none to spare.
+  .shell__who { display: none; }
+
+  .shell__body {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    // Clear of the bar, and of the home indicator on a phone that has one.
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .shell__nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 3;
+    padding: var(--space-1) var(--space-2) calc(var(--space-1) + env(safe-area-inset-bottom, 0px));
+    border-right: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .shell__list {
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0;
+  }
+
+  .shell__link {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-2) var(--space-1);
+    text-align: center;
+    // The rule moves to the top edge: a left border on a bottom tab points at
+    // nothing, and reads as a divider between tabs rather than as "you are here".
+    border-left: 0;
+    border-top: 3px solid transparent;
+    border-radius: 0;
+
+    &.is-current { background: transparent; border-top-color: var(--accent-solid); }
+  }
+
+  .shell__label { font-size: var(--text-2xs); }
+}

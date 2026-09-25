@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { Field } from '../../components/ui/Field.jsx';
 import { SubmitButton } from '../../components/ui/SubmitButton.jsx';
 import { Alert } from '../../components/ui/Alert.jsx';
-import { Logo } from '../../components/ui/Logo.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
 import { useRate, useSetRate } from '../../lib/api/hooks.js';
 import { useSubmit } from '../auth/useSubmit.js';
@@ -113,8 +112,7 @@ export default function RatePage() {
   if (saved) {
     return (
       <main id="main" tabIndex={-1} className="page-width app-page">
-        <p className="mb-5"><Logo /></p>
-        <h1 className="app-header__title">Your buyback rate</h1>
+          <h1 className="app-header__title">Your buyback rate</h1>
 
         <p className="rate-figure numeric">{formatMoney(saved.rateMinorPerHour, saved.currency)}<span className="rate-figure__unit"> an hour</span></p>
 
@@ -133,7 +131,6 @@ export default function RatePage() {
 
   return (
     <main id="main" tabIndex={-1} className="page-width app-page measure">
-      <p className="mb-5"><Logo /></p>
 
       <h1 className="app-header__title">What is an hour of your time worth?</h1>
       <p className="app-header__subtitle mb-5">

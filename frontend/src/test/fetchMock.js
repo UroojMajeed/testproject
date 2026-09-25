@@ -115,5 +115,15 @@ export const signedInWorkspace = (over = {}) => ({
   ] }),
   'GET /api/v1/workspace/activities/unsorted': success({ activities: [] }),
   'GET /api/v1/workspace/rate': success({ rate: DASHBOARD.rate }),
+  // Reachable from the frame's nav on every signed-in screen now, so it belongs
+  // here rather than in the one test file that used to be the only way in.
+  'GET /api/v1/workspace/audits/current': success({
+    week: {
+      id: 'w1', weekStarting: '2026-09-28', weekEnding: '2026-10-04', timezone: 'UTC',
+      status: 'draft', isTypical: true, completedAt: null, entries: [], totalEstimatedMinutes: 0,
+    },
+    suggestions: [],
+    isNew: true,
+  }),
   ...over,
 });
