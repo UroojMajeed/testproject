@@ -1,4 +1,5 @@
 import { costOfMinutes, annualisedCost } from '../rates/rate.formula.js';
+import { classify, averageEnergy, QUADRANTS, valueRank } from '../drip/drip.js';
 import * as rates from '../rates/rate.service.js';
 import * as audits from '../audits/audit.service.js';
 import * as activities from '../activities/activity.service.js';
@@ -23,7 +24,24 @@ export async function forWorkspace(workspace, userId) {
     activities.list(workspace._id, { includeArchived: true }),
   ]);
 
-  const names = new Map(activityRows.map((row) => [String(row._id), row.name]));
+  const byId = new Map(activityRows.map((row) => [String(row._id), row]));
+
+  /**
+   * Every energy an activity has been given, across the weeks on record.
+   *
+   * Collected before the headline week is picked, because a quadrant is a
+   * statement about an activity over time and the headline is a statement about
+   * one week. Atypical weeks are excluded: the week everything caught fire should
+   * not decide that client work drains you.
+   */
+  const energyHistory = new Map();
+  for (const week of weeks.filter((candidate) => candidate.isTypical)) {
+    for (const entry of week.entries) {
+      const key = String(entry.activityId);
+      if (!energyHistory.has(key)) energyHistory.set(key, []);
+      energyHistory.get(key).push(entry.energy);
+    }
+  }
 
   // The most recent finished week is the headline. Weeks the owner marked atypical
   // are still shown, but they do not get to be the number everything is judged by.
@@ -34,20 +52,33 @@ export async function forWorkspace(workspace, userId) {
       week: null,
       rate: rateSummary(rate),
       activities: [],
+      matrix: buildMatrix([], rate),
+      unsortedCount: 0,
       totals: { estimatedMinutes: 0, estimatedWeeklyCostMinor: 0, estimatedAnnualCostMinor: 0 },
       worst: null,
       weeksRecorded: 0,
     };
   }
 
-  const rows = latest.entries.map((entry) => ({
-    activityId: String(entry.activityId),
-    name: names.get(String(entry.activityId)) ?? 'Removed activity',
-    estimatedMinutes: entry.estimatedMinutes,
-    energy: entry.energy,
-    estimatedWeeklyCostMinor: costOfMinutes(entry.estimatedMinutes, rate.rateMinorPerHour),
-    estimatedAnnualCostMinor: annualisedCost(entry.estimatedMinutes, rate.rateMinorPerHour, rate.weeksPerYear),
-  }));
+  const rows = latest.entries.map((entry) => {
+    const id = String(entry.activityId);
+    const activity = byId.get(id);
+    const energies = energyHistory.get(id) ?? [entry.energy];
+
+    return {
+      activityId: id,
+      name: activity?.name ?? 'Removed activity',
+      estimatedMinutes: entry.estimatedMinutes,
+      energy: entry.energy,
+      averageEnergy: averageEnergy(energies),
+      value: activity?.value ?? null,
+      // null while nobody has answered the value question for it. The client shows
+      // that as a gap rather than filing it somewhere it does not belong.
+      quadrant: classify({ value: activity?.value, energies }),
+      estimatedWeeklyCostMinor: costOfMinutes(entry.estimatedMinutes, rate.rateMinorPerHour),
+      estimatedAnnualCostMinor: annualisedCost(entry.estimatedMinutes, rate.rateMinorPerHour, rate.weeksPerYear),
+    };
+  });
 
   const estimatedMinutes = rows.reduce((sum, row) => sum + row.estimatedMinutes, 0);
 
@@ -75,6 +106,8 @@ export async function forWorkspace(workspace, userId) {
     },
     rate: rateSummary(rate),
     activities: ranked,
+    matrix: buildMatrix(ranked, rate),
+    unsortedCount: rows.filter((row) => row.quadrant === null).length,
     totals: {
       estimatedMinutes,
       estimatedWeeklyCostMinor: costOfMinutes(estimatedMinutes, rate.rateMinorPerHour),
@@ -83,6 +116,40 @@ export async function forWorkspace(workspace, userId) {
     worst,
     weeksRecorded: weeks.length,
   };
+}
+
+/**
+ * Each quadrant with its own totals.
+ *
+ * The totals are what stop this being a poster. "Four things drain you and do not
+ * matter" is an observation; "four things, nine hours a week, £7,000 a year" is a
+ * decision — and it is the number a person costs being compared against, which is
+ * what step 4 turns into a plan.
+ */
+function buildMatrix(rows, rate) {
+  const quadrants = Object.fromEntries(Object.values(QUADRANTS).map((name) => [name, []]));
+
+  for (const row of rows) {
+    if (row.quadrant) quadrants[row.quadrant].push(row);
+  }
+
+  return Object.fromEntries(Object.entries(quadrants).map(([name, members]) => {
+    // Most valuable first, then most expensive — so the top of a Replace list is
+    // the thing that pays most and hurts most, not merely the longest.
+    const ordered = [...members].sort((a, b) =>
+      valueRank(b.value) - valueRank(a.value)
+      || b.estimatedWeeklyCostMinor - a.estimatedWeeklyCostMinor);
+
+    const estimatedMinutes = ordered.reduce((sum, row) => sum + row.estimatedMinutes, 0);
+
+    return [name, {
+      activities: ordered,
+      count: ordered.length,
+      estimatedMinutes,
+      estimatedWeeklyCostMinor: costOfMinutes(estimatedMinutes, rate.rateMinorPerHour),
+      estimatedAnnualCostMinor: annualisedCost(estimatedMinutes, rate.rateMinorPerHour, rate.weeksPerYear),
+    }];
+  }));
 }
 
 /** The rate that produced these figures, so the arithmetic can be checked. */

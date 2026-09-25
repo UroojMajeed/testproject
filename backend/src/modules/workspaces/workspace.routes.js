@@ -5,7 +5,9 @@ import * as activities from '../activities/activity.controller.js';
 import * as audits from '../audits/audit.controller.js';
 import * as dashboard from '../dashboard/dashboard.controller.js';
 import { setRateSchema } from '../rates/rate.validation.js';
-import { createActivitySchema, renameActivitySchema, activityIdSchema } from '../activities/activity.validation.js';
+import {
+  createActivitySchema, renameActivitySchema, activityIdSchema, setValueSchema,
+} from '../activities/activity.validation.js';
 import { saveWeekSchema, weekParamSchema } from '../audits/audit.validation.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
@@ -34,8 +36,12 @@ workspaceRouter.put('/rate', validate(setRateSchema), rates.setRate);
 workspaceRouter.get('/rate/history', rates.history);
 
 workspaceRouter.get('/activities', activities.list);
+// Before '/:id', or the literal is read as an id and the sort screen 404s. The
+// route-order test walks the stack for exactly this.
+workspaceRouter.get('/activities/unsorted', activities.unsorted);
 workspaceRouter.post('/activities', validate(createActivitySchema), activities.create);
 workspaceRouter.patch('/activities/:id', validate(renameActivitySchema), activities.rename);
+workspaceRouter.put('/activities/:id/value', validate(setValueSchema), activities.setValue);
 workspaceRouter.delete('/activities/:id', validate(activityIdSchema), activities.archive);
 
 // "current" before ":weekStarting", or the literal would be read as a date and the

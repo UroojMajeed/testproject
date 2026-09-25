@@ -1,4 +1,4 @@
-import { Workspace, BuybackRate, AuditWeek } from '../../models/index.js';
+import { Workspace, BuybackRate, AuditWeek, Activity } from '../../models/index.js';
 import { weekToAudit } from '../../utils/weeks.js';
 import { logger } from '../../config/logger.js';
 
@@ -73,10 +73,12 @@ export async function findOrCreateForOwner(user) {
 export async function stateFor(workspace, userId, now = new Date()) {
   const scope = { workspaceId: workspace._id, userId };
 
-  const [rate, currentAudit, completedCount] = await Promise.all([
+  const [rate, currentAudit, completedCount, unsortedCount, sortedCount] = await Promise.all([
     BuybackRate.findOne(scope).sort({ effectiveFrom: -1 }),
     AuditWeek.findOne({ ...scope, weekStarting: weekToAudit(now, workspace.timezone, workspace.auditDay) }),
     AuditWeek.countDocuments({ ...scope, status: 'complete' }),
+    Activity.countDocuments({ workspaceId: workspace._id, value: null, archivedAt: null }),
+    Activity.countDocuments({ workspaceId: workspace._id, value: { $ne: null } }),
   ]);
 
   const weekStarting = weekToAudit(now, workspace.timezone, workspace.auditDay);
@@ -90,5 +92,17 @@ export async function stateFor(workspace, userId, now = new Date()) {
     // lock somebody out of the figures they already have.
     currentWeekFiled: currentAudit?.status === 'complete',
     completedAudits: completedCount,
+
+    /**
+     * The first sort is a gate; every one after it is a prompt.
+     *
+     * Straight after the first audit there is a list of activities and no way to
+     * tell Delegate from Replace, so the matrix would be empty on the one visit
+     * that decides whether somebody comes back. Once anything is sorted the gate
+     * is gone for good — a new activity next Friday must not wall off figures
+     * they already have.
+     */
+    needsFirstSort: completedCount > 0 && sortedCount === 0 && unsortedCount > 0,
+    unsortedCount,
   };
 }

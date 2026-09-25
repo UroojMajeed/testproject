@@ -13,7 +13,7 @@ testproject/
 **Step 1 — authentication.** Done. Sign up, sign in, sign out, session refresh,
 password reset, plus the landing page and the design system.
 
-**Step 2 — what your week costs.** In progress. The agreed shape:
+**Step 2 — what your week costs.** Done. Rate, weekly audit, dashboard:
 
 ```
 sign in → buyback rate → first audit (last week) → dashboard → every Friday
@@ -25,12 +25,32 @@ sign in → buyback rate → first audit (last week) → dashboard → every Fri
 - A **weekly audit** of last week: per activity, estimated hours and energy.
 - A **dashboard** that ranks activities by what they cost, and points at the worst.
 
-Deliberately **not** in step 2, each being a step of its own: the DRIP value sort,
-recommendations, delegation, playbooks, any AI, calendar import.
+The weekly audit asks only for hours and energy — fast, factual recall.
 
-The weekly audit asks only for hours and energy — fast, factual recall. Judging an
-activity's *value* is slow, reflective thinking and belongs to the sort step. Mixing
-them makes the weekly habit heavy, and the habit is the product.
+**Step 3 — what matters.** In progress. One question per activity, asked **once**:
+
+> If you stopped doing this for a month, what happens?
+> Revenue stops · Something slips · Not much
+
+That is the value axis. Value against energy gives the DRIP quadrant:
+
+|              | drains you    | does not drain you |
+| ------------ | ------------- | ------------------ |
+| **low value**  | **Delegate**  | **Invest**         |
+| **high value** | **Replace**   | **Produce**        |
+
+The distinction this exists for is Delegate against Replace. Both drain you, and
+today they are indistinguishable — one goes to a VA on Friday, the other is a hire
+that breaks the business if it goes to the wrong person.
+
+Value is asked once because it barely changes; hours and energy are asked weekly
+because they do. That difference in cadence is the reason for the split, and it is
+what keeps the Friday habit to two questions.
+
+Deliberately **not** in step 3, each being a step of its own: bundling activities
+into a role, the hiring roadmap, playbooks, delegation tracking, any AI, calendar
+import. Step 3 names the quadrant and gives per-quadrant totals; step 4 turns that
+into a plan.
 
 When asked for something outside the current step, say so before building it.
 Scope creep is the thing this rebuild exists to avoid.

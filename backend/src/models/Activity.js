@@ -2,6 +2,15 @@ import mongoose from 'mongoose';
 import { toJSONPlugin, tenantPlugin, softDeletePlugin } from './plugins.js';
 
 /**
+ * The value axis, in the words people can actually answer.
+ *
+ * Not money. Asked as "if you stopped doing this for a month, what happens" —
+ * because almost nobody can price answering email, and a figure they guessed is
+ * noise the whole matrix would then be built on.
+ */
+export const ACTIVITY_VALUES = Object.freeze(['low', 'important', 'critical']);
+
+/**
  * A repeating thing the owner does.
  *
  * Persistent, and that is the whole point. If each Friday's audit held freshly
@@ -13,6 +22,14 @@ import { toJSONPlugin, tenantPlugin, softDeletePlugin } from './plugins.js';
 const activitySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 120 },
+
+    /**
+     * Null until the owner sorts it. Deliberately nullable rather than defaulted:
+     * "not asked yet" and "they said it does not matter" are different facts, and
+     * defaulting would silently file every new activity in the Delegate quadrant.
+     */
+    value: { type: String, enum: [...ACTIVITY_VALUES, null], default: null },
+    valueSetAt: { type: Date, default: null },
 
     // Retired rather than deleted: past audits still reference it, and a week's
     // history should not change because something stopped happening.

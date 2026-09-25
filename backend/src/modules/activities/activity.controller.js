@@ -14,6 +14,16 @@ export const create = asyncHandler(async (req, res) =>
 export const rename = asyncHandler(async (req, res) =>
   ok(res, { activity: serializeActivity(await service.rename(req.workspace._id, req.params.id, req.body.name)) }));
 
+export const unsorted = asyncHandler(async (req, res) => {
+  const rows = await service.unsorted(req.workspace._id);
+  return ok(res, { activities: rows.map(serializeActivity) });
+});
+
+export const setValue = asyncHandler(async (req, res) =>
+  ok(res, {
+    activity: serializeActivity(await service.setValue(req.workspace._id, req.params.id, req.body.value)),
+  }));
+
 export const archive = asyncHandler(async (req, res) => {
   await service.archive(req.workspace._id, req.params.id);
   return noContent(res);

@@ -1,4 +1,5 @@
 import { Activity } from '../../models/index.js';
+import { ACTIVITY_VALUES } from '../../models/Activity.js';
 import { ApiError } from '../../utils/ApiError.js';
 import { ERROR_CODES } from '../../config/constants.js';
 
@@ -68,6 +69,33 @@ export async function rename(workspaceId, id, name) {
     }
     throw err;
   }
+}
+
+/**
+ * The activities nobody has answered the value question for yet.
+ *
+ * Archived ones are excluded: being asked what a thing you have stopped doing is
+ * worth is a waste of the only two minutes anybody will give this.
+ */
+export async function unsorted(workspaceId) {
+  return Activity.find({ workspaceId, value: null, archivedAt: null })
+    .sort({ createdAt: 1 });
+}
+
+/**
+ * Sets the value once. It is editable afterwards, but it is not asked again —
+ * value barely changes, which is the whole reason it is not part of the weekly
+ * audit.
+ */
+export async function setValue(workspaceId, id, value) {
+  if (!ACTIVITY_VALUES.includes(value)) throw ApiError.badRequest('Not a value we recognise');
+
+  const activity = await Activity.findByIdScoped(id, workspaceId);
+  if (!activity) throw ApiError.notFound('No such activity');
+
+  activity.value = value;
+  activity.valueSetAt = new Date();
+  return activity.save();
 }
 
 /**
