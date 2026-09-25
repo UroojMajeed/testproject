@@ -7,6 +7,8 @@ import { useDashboard, useWorkspaceState } from '../../lib/api/hooks.js';
 import { useAuth } from '../../context/useAuth.js';
 import { formatMoney, formatDuration, formatWeekRange } from '../../lib/money.js';
 import { energyLabel } from '../audit/energy.js';
+import { Matrix } from './Matrix.jsx';
+import { QUADRANT_COPY } from '../sort/value.js';
 import { paths } from '../../routes/paths.js';
 
 /**
@@ -35,7 +37,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { week, rate, activities, totals, worst, weeksRecorded } = data;
+  const { week, rate, activities, totals, worst, weeksRecorded, matrix, unsortedCount } = data;
   const currency = rate.currency;
 
   return (
@@ -136,6 +138,8 @@ export default function DashboardPage() {
             </table>
           </section>
 
+          <Matrix matrix={matrix} currency={currency} unsortedCount={unsortedCount} />
+
           {worst ? (
             <section className="verdict" aria-labelledby="verdict-heading">
               <h2 id="verdict-heading" className="verdict__title">Start with {worst.name}</h2>
@@ -144,7 +148,16 @@ export default function DashboardPage() {
                 it costs about <strong className="numeric">{formatMoney(worst.estimatedAnnualCostMinor, currency)}</strong> of
                 your time. Not the largest number on the page — the one most worth handing over.
               </p>
-              <p className="verdict__next">Deciding what to do about it is the next step of the build.</p>
+              {/*
+                Said after the matrix, so it has to agree with it. Once an activity
+                is sorted the matrix has already named what to do; what is still
+                missing is who takes it on and what that costs, which is step 4.
+              */}
+              <p className="verdict__next">
+                {worst.quadrant
+                  ? `${QUADRANT_COPY[worst.quadrant].title} is the move. Who takes it on, and what that costs, is the next step of the build.`
+                  : 'Answer one question about it and this page will say what to do with it.'}
+              </p>
             </section>
           ) : (
             <section className="verdict">

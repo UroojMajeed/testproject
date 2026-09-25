@@ -102,6 +102,9 @@ const NON_TEXT_PAIRS = [
   ['--border-default', '--bg-canvas'], ['--border-default', '--bg-surface'], ['--border-default', '--bg-sunken'],
   ['--border-strong', '--bg-canvas'], ['--border-strong', '--bg-surface'],
   ['--border-accent', '--bg-surface'],
+  // The matrix stripes. Decoration rather than the only signal, but a mark that
+  // cannot be seen is worse than no mark: it looks like a rendering fault.
+  ['--accent-solid', '--bg-surface'],
   ['--border-success', '--bg-surface'], ['--border-warning', '--bg-surface'], ['--border-danger', '--bg-surface'],
 
   // The focus ring is two bands. The halo has to read against the control it sits

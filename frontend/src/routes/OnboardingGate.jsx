@@ -32,7 +32,14 @@ export function OnboardingGate() {
     );
   }
 
-  const wanted = data.needsRate ? paths.rate : data.needsFirstAudit ? paths.audit : null;
+  /**
+   * Rate, then the first week, then the first sort. Each one is only a gate until
+   * it has been done once.
+   */
+  const wanted = data.needsRate ? paths.rate
+    : data.needsFirstAudit ? paths.audit
+      : data.needsFirstSort ? paths.sort
+        : null;
 
   // Past onboarding: everything is open.
   if (!wanted) return <Outlet />;
@@ -48,7 +55,11 @@ export function OnboardingGate() {
    * So: the dashboard is what is gated. Standing on a step you have already done
    * is always allowed.
    */
-  const reachable = data.needsRate ? [paths.rate] : [paths.rate, paths.audit];
+  const reachable = data.needsRate
+    ? [paths.rate]
+    : data.needsFirstAudit
+      ? [paths.rate, paths.audit]
+      : [paths.rate, paths.audit, paths.sort];
   if (reachable.includes(location.pathname)) return <Outlet />;
 
   return <Navigate to={wanted} replace />;

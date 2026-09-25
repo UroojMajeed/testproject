@@ -59,6 +59,16 @@ describe('every page is one document with one main landmark', () => {
     expect(mains[0].id).toBe('main');
   });
 
+  it('the sort screen', async () => {
+    const { container } = await renderAt(paths.sort, true);
+    await screen.findByRole('heading', { level: 1 });
+
+    const mains = container.querySelectorAll('main');
+    expect(mains).toHaveLength(1);
+    expect(mains[0].id).toBe('main');
+    expect(mains[0].getAttribute('tabindex')).toBe('-1');
+  });
+
   it('offers the skip link first, before anything else focusable', async () => {
     const { container } = await renderAt(paths.landing);
 

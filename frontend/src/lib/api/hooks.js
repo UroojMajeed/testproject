@@ -44,6 +44,35 @@ export function useActivities() {
   });
 }
 
+export function useUnsortedActivities() {
+  return useQuery({
+    queryKey: ['workspace', 'activities', 'unsorted'],
+    queryFn: () => api.get(endpoints.workspace.unsortedActivities()),
+    // The sort screen works through this list; a stale copy would re-ask about
+    // something already answered.
+    staleTime: 0,
+  });
+}
+
+/**
+ * Saves one answer.
+ *
+ * Deliberately invalidates nothing. The sort screen saves each choice as it is
+ * made, and refetching the list between cards would reorder the deck under the
+ * reader's hand. The screen invalidates once, when it is finished.
+ */
+export function useSetActivityValue() {
+  return useMutation({
+    mutationFn: ({ id, value }) => api.put(endpoints.workspace.activityValue(id), { value }),
+  });
+}
+
+/** Called when the sort screen is done, so state and the dashboard catch up. */
+export function useRefreshWorkspace() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ['workspace'] });
+}
+
 export function useCurrentAudit() {
   return useQuery({
     queryKey: ['workspace', 'audit', 'current'],

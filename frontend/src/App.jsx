@@ -10,6 +10,7 @@ import { OnboardingGate } from './routes/OnboardingGate.jsx';
 import DashboardPage from './features/dashboard/DashboardPage.jsx';
 import RatePage from './features/rate/RatePage.jsx';
 import AuditPage from './features/audit/AuditPage.jsx';
+import SortPage from './features/sort/SortPage.jsx';
 
 /**
  * The skip link lives here, once, and every page supplies the `<main id="main">`
@@ -48,6 +49,7 @@ export default function App() {
             <Route path={paths.app} element={<DashboardPage />} />
             <Route path={paths.rate} element={<RatePage />} />
             <Route path={paths.audit} element={<AuditPage />} />
+            <Route path={paths.sort} element={<SortPage />} />
           </Route>
         </Route>
 

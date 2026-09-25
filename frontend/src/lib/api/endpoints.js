@@ -41,7 +41,8 @@ export const endpoints = Object.freeze({
   workspace: Object.freeze({
     // → 200 { workspace }
     show: () => `${API_BASE}/workspace`,
-    // → 200 { weekStarting, needsRate, needsFirstAudit, currentWeekFiled, completedAudits }
+    // → 200 { weekStarting, needsRate, needsFirstAudit, currentWeekFiled, completedAudits,
+    //         needsFirstSort, unsortedCount }
     state: () => `${API_BASE}/workspace/state`,
 
     // → 200 { rate } — null until one is set
@@ -51,6 +52,10 @@ export const endpoints = Object.freeze({
 
     // → 200 { activities }
     activities: () => `${API_BASE}/workspace/activities`,
+    // → 200 { activities } — the ones with no value answered yet
+    unsortedActivities: () => `${API_BASE}/workspace/activities/unsorted`,
+    // PUT { value: low|important|critical } → 200 { activity }
+    activityValue: (id) => `${API_BASE}/workspace/activities/${id}/value`,
     // PATCH { name } → 200 { activity } · DELETE → 204 (archives)
     activity: (id) => `${API_BASE}/workspace/activities/${id}`,
 
@@ -61,7 +66,9 @@ export const endpoints = Object.freeze({
     // PUT { entries[], isTypical?, status? } → 200 { week }
     audit: (weekStarting) => `${API_BASE}/workspace/audits/${weekStarting}`,
 
-    // → 200 { week, rate, activities, totals, worst, weeksRecorded }
+    // → 200 { week, rate, activities, matrix, unsortedCount, totals, worst, weeksRecorded }
+    //   matrix: { delegate, replace, invest, produce }, each { activities, count,
+    //   estimatedMinutes, estimatedWeeklyCostMinor, estimatedAnnualCostMinor }
     dashboard: () => `${API_BASE}/workspace/dashboard`,
   }),
 });

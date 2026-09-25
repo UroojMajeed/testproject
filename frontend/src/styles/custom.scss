@@ -919,3 +919,198 @@ a:hover .logo { color: var(--fg-default); }
 }
 
 .mt-6 { margin-top: var(--space-6); }
+
+// ── Step 3: the sort, and the matrix ────────────────────────────────────────
+
+.sort-progress {
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+  font-variant-numeric: tabular-nums lining-nums;
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.sort-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6) var(--space-5);
+}
+
+// The name is set larger than the question, which inverts the usual heading
+// hierarchy on purpose: the question is identical on every card and the eye stops
+// reading it after the second one, while the name is the only thing that changed.
+// The document order still puts the question in an <h2>, so a screen reader
+// announces the section properly.
+.sort-card__activity {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-2);
+}
+
+.sort-card__question {
+  font-size: var(--text-base);
+  font-weight: var(--weight-normal);
+  color: var(--fg-muted);
+  margin: 0 0 var(--space-5);
+}
+
+.sort-card__answers {
+  display: grid;
+  gap: var(--space-3);
+}
+
+// One column, always. Three answers side by side reads as a comparison to be
+// weighed up; stacked, it reads as a list to pick from, which is the faster act
+// and the one this screen wants.
+.sort-answer {
+  display: block;
+  width: 100%;
+  text-align: left;
+  min-height: var(--tap-target);
+  padding: var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  color: var(--fg-default);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+
+  &:hover:not(:disabled) {
+    border-color: var(--border-strong);
+    background: var(--bg-sunken);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 2px var(--focus-halo), 0 0 0 4px var(--focus-ring);
+  }
+
+  // Flat tokens rather than opacity, for the same reason the buttons above use
+  // them: a translucent control's contrast is whatever happens to be behind it.
+  &:disabled {
+    cursor: default;
+    border-color: var(--border-subtle);
+    color: var(--fg-subtle);
+  }
+}
+
+.sort-answer__label {
+  display: block;
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.sort-answer__description {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-muted);
+}
+
+.sort-answer:disabled .sort-answer__description { color: var(--fg-subtle); }
+
+.sort-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-5);
+}
+
+// ── The matrix ──────────────────────────────────────────────────────────────
+
+.quadrants {
+  display: grid;
+  // Two across on a desk, one on a phone. Not a 2×2 with fixed positions: the
+  // reading order is the priority order, and a grid that reflows keeps it.
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.quadrant {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+}
+
+// The stripe is decoration. Which quadrant a block is never depends on it — the
+// title says the word and the sentence under it says what the word means.
+.quadrant[data-quadrant='replace'] { border-left-color: var(--fg-danger); }
+.quadrant[data-quadrant='delegate'] { border-left-color: var(--fg-warning); }
+.quadrant[data-quadrant='produce'] { border-left-color: var(--fg-success); }
+.quadrant[data-quadrant='invest'] { border-left-color: var(--accent-solid); }
+
+.quadrant__head { margin-bottom: var(--space-4); }
+
+.quadrant__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.quadrant__meaning {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-muted);
+  margin: 0;
+}
+
+.quadrant__list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quadrant__item {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--text-sm);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.quadrant__item:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.quadrant__name { color: var(--fg-default); }
+.quadrant__hours { color: var(--fg-muted); white-space: nowrap; }
+
+.quadrant__total {
+  // Pushed to the bottom so the totals line up across blocks of different
+  // heights, which is what makes two quadrants comparable at a glance.
+  margin: auto 0 var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.quadrant__total strong { color: var(--fg-default); font-weight: var(--weight-semibold); }
+
+.quadrant__action {
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-subtle);
+  margin: 0;
+}
+
+// Said plainly rather than styled as a warning: an unsorted activity is an
+// unfinished sentence, not an error.
+.matrix-gap {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+}

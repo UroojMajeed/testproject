@@ -49,20 +49,56 @@ const WORKSPACE = { id: 'ws1', name: 'My business', auditDay: 'friday', timezone
 
 const RATE = { id: 'r1', rateMinorPerHour: 1500, currency: 'USD', annualIncomeMinor: 12_000_000, hoursPerWeek: 40, weeksPerYear: 50, formulaVersion: 1, effectiveFrom: '2026-09-01T00:00:00.000Z' };
 
-const DASHBOARD = {
+const INVOICING = { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, averageEnergy: -2, value: 'low', quadrant: 'delegate', estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 };
+const SALES_CALLS = { activityId: 'a2', name: 'Sales calls', estimatedMinutes: 360, energy: 2, averageEnergy: 2, value: 'critical', quadrant: 'produce', estimatedWeeklyCostMinor: 9000, estimatedAnnualCostMinor: 450000 };
+
+/** A quadrant with its totals summed from its members, as the server does it. */
+export const quadrant = (activities) => ({
+  activities,
+  count: activities.length,
+  estimatedMinutes: activities.reduce((sum, row) => sum + row.estimatedMinutes, 0),
+  estimatedWeeklyCostMinor: activities.reduce((sum, row) => sum + row.estimatedWeeklyCostMinor, 0),
+  estimatedAnnualCostMinor: activities.reduce((sum, row) => sum + row.estimatedAnnualCostMinor, 0),
+});
+
+export const DASHBOARD = {
   week: { weekStarting: '2026-09-14', weekEnding: '2026-09-20', isTypical: true, completedAt: '2026-09-19T10:00:00.000Z' },
   rate: RATE,
-  activities: [
-    { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
-    { activityId: 'a2', name: 'Sales calls', estimatedMinutes: 360, energy: 2, estimatedWeeklyCostMinor: 9000, estimatedAnnualCostMinor: 450000 },
-  ],
+  activities: [INVOICING, SALES_CALLS],
+  matrix: {
+    delegate: quadrant([INVOICING]),
+    replace: quadrant([]),
+    invest: quadrant([]),
+    produce: quadrant([SALES_CALLS]),
+  },
+  unsortedCount: 0,
   totals: { estimatedMinutes: 600, estimatedWeeklyCostMinor: 15000, estimatedAnnualCostMinor: 750000 },
-  worst: { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+  worst: INVOICING,
   weeksRecorded: 1,
 };
 
-export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) {
-  const state = { session: signedIn, failedLogins: 0 };
+/** The deck the sort screen works through. Reset per stub, since answering empties it. */
+export const UNSORTED = [
+  { id: 'a3', name: 'Bookkeeping', value: null, valueSetAt: null, archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+  { id: 'a4', name: 'Social posts', value: null, valueSetAt: null, archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+];
+
+/**
+ * @param unsorted  the activities with no value answered yet. Empty by default, so
+ *   every existing test starts past the sort rather than being sent to it.
+ * @param dashboard a whole dashboard payload, for the cases that need an unusual
+ *   one — composed here rather than intercepted, because a second page.route on
+ *   the same pattern cannot reach this one's answer.
+ */
+export async function stubApi(page, { signedIn = false, onboarding = {}, unsorted = [], dashboard = DASHBOARD } = {}) {
+  const state = {
+    session: signedIn,
+    failedLogins: 0,
+    unsorted: unsorted.map((row) => ({ ...row })),
+    // The gate is about the *first* sort, so one answer opens it for good — which
+    // is what lets a test walk the deck to the end and land on the dashboard.
+    sortedAny: false,
+  };
   const calls = [];
 
   await page.route('**/api/v1/**', async (route) => {
@@ -70,6 +106,22 @@ export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) 
     const path = new URL(request.url()).pathname;
     const body = request.postData() ? JSON.parse(request.postData()) : {};
     calls.push({ method: request.method(), path, body });
+
+    /**
+     * Answering one activity. A path parameter, so it cannot be a switch case —
+     * and it mutates the deck, because the sort screen's whole point is that an
+     * answered activity does not come back.
+     */
+    const valueMatch = path.match(/^\/api\/v1\/workspace\/activities\/([^/]+)\/value$/);
+    if (valueMatch) {
+      const [, id] = valueMatch;
+      const answered = state.unsorted.find((row) => row.id === id);
+      state.unsorted = state.unsorted.filter((row) => row.id !== id);
+      state.sortedAny = true;
+      return route.fulfill(ok({
+        activity: { ...answered, id, value: body.value, valueSetAt: new Date().toISOString() },
+      }));
+    }
 
     switch (path) {
       case '/api/v1/auth/refresh':
@@ -126,6 +178,10 @@ export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) 
           needsFirstAudit: false,
           currentWeekFiled: true,
           completedAudits: 1,
+          // Derived, not fixed: a static answer here sends the sort screen back to
+          // itself after its last card, because the gate re-reads this on arrival.
+          needsFirstSort: !state.sortedAny && state.unsorted.length > 0,
+          unsortedCount: state.unsorted.length,
           ...onboarding,
         }));
 
@@ -134,9 +190,13 @@ export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) 
 
       case '/api/v1/workspace/activities':
         return route.fulfill(ok({ activities: [
-          { id: 'a1', name: 'Invoicing', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
-          { id: 'a2', name: 'Sales calls', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+          { id: 'a1', name: 'Invoicing', value: 'low', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+          { id: 'a2', name: 'Sales calls', value: 'critical', valueSetAt: '2026-09-20T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
         ] }));
+
+      // ── Step 3 ────────────────────────────────────────────────────────
+      case '/api/v1/workspace/activities/unsorted':
+        return route.fulfill(ok({ activities: state.unsorted }));
 
       case '/api/v1/workspace/audits/current':
         return route.fulfill(ok({
@@ -149,7 +209,7 @@ export async function stubApi(page, { signedIn = false, onboarding = {} } = {}) 
         }));
 
       case '/api/v1/workspace/dashboard':
-        return route.fulfill(ok(DASHBOARD));
+        return route.fulfill(ok(dashboard));
 
       default:
         // Loud, because a silent 404 here looks like a frontend bug for an hour.

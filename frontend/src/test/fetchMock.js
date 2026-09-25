@@ -54,17 +54,54 @@ export const WORKSPACE_STATE = {
   needsFirstAudit: false,
   currentWeekFiled: true,
   completedAudits: 3,
+  needsFirstSort: false,
+  unsortedCount: 0,
 };
+
+/**
+ * Two dashboard rows, reused by the matrix below.
+ *
+ * Shared rather than duplicated because the server sends the same row object in
+ * both places: a fixture where they drift apart would let a component pass a test
+ * it could not pass against the real API.
+ */
+const INVOICING = {
+  activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2,
+  averageEnergy: -2, value: 'low', quadrant: 'delegate',
+  estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000,
+};
+
+const SALES_CALLS = {
+  activityId: 'a2', name: 'Sales calls', estimatedMinutes: 300, energy: 2,
+  averageEnergy: 2, value: 'critical', quadrant: 'produce',
+  estimatedWeeklyCostMinor: 7500, estimatedAnnualCostMinor: 375000,
+};
+
+/** A quadrant with its totals summed from its members, as the server does it. */
+const quadrant = (activities) => ({
+  activities,
+  count: activities.length,
+  estimatedMinutes: activities.reduce((sum, row) => sum + row.estimatedMinutes, 0),
+  estimatedWeeklyCostMinor: activities.reduce((sum, row) => sum + row.estimatedWeeklyCostMinor, 0),
+  estimatedAnnualCostMinor: activities.reduce((sum, row) => sum + row.estimatedAnnualCostMinor, 0),
+});
 
 export const DASHBOARD = {
   week: { weekStarting: '2026-09-21', weekEnding: '2026-09-27', isTypical: true, completedAt: '2026-09-25T10:00:00.000Z' },
   rate: { rateMinorPerHour: 1500, currency: 'USD', weeksPerYear: 50, effectiveFrom: '2026-09-01T00:00:00.000Z', formulaVersion: 1 },
-  activities: [
-    { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
-    { activityId: 'a2', name: 'Sales calls', estimatedMinutes: 300, energy: 2, estimatedWeeklyCostMinor: 7500, estimatedAnnualCostMinor: 375000 },
-  ],
+  activities: [INVOICING, SALES_CALLS],
+  matrix: {
+    // Invoicing drains and does not matter; sales calls energise and do. The two
+    // named quadrants are enough to prove ordering and totals, and leaving the
+    // other two empty is what a real first sort looks like.
+    delegate: quadrant([INVOICING]),
+    replace: quadrant([]),
+    invest: quadrant([]),
+    produce: quadrant([SALES_CALLS]),
+  },
+  unsortedCount: 0,
   totals: { estimatedMinutes: 540, estimatedWeeklyCostMinor: 13500, estimatedAnnualCostMinor: 675000 },
-  worst: { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+  worst: INVOICING,
   weeksRecorded: 3,
 };
 
@@ -73,9 +110,10 @@ export const signedInWorkspace = (over = {}) => ({
   'GET /api/v1/workspace/state': success(WORKSPACE_STATE),
   'GET /api/v1/workspace/dashboard': success(DASHBOARD),
   'GET /api/v1/workspace/activities': success({ activities: [
-    { id: 'a1', name: 'Invoicing', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
-    { id: 'a2', name: 'Sales calls', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+    { id: 'a1', name: 'Invoicing', value: 'low', valueSetAt: '2026-09-24T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
+    { id: 'a2', name: 'Sales calls', value: 'critical', valueSetAt: '2026-09-24T00:00:00.000Z', archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
   ] }),
+  'GET /api/v1/workspace/activities/unsorted': success({ activities: [] }),
   'GET /api/v1/workspace/rate': success({ rate: DASHBOARD.rate }),
   ...over,
 });

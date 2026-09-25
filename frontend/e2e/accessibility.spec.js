@@ -200,7 +200,7 @@ test.describe('what the browser actually computes', () => {
   test('every interactive control is at least 44px tall', async ({ page }) => {
     await stubApi(page, { signedIn: true });
 
-    for (const path of ['/', '/sign-in', '/sign-up', '/app']) {
+    for (const path of ['/', '/sign-in', '/sign-up', '/app', '/app/sort']) {
       await page.goto(path);
       const small = await page.locator('button, .btn').evaluateAll((nodes) =>
         nodes
@@ -215,7 +215,7 @@ test.describe('what the browser actually computes', () => {
   test('nothing overflows sideways', async ({ page }) => {
     await stubApi(page, { signedIn: true });
 
-    for (const path of ['/', '/sign-in', '/sign-up', '/forgot-password', '/app']) {
+    for (const path of ['/', '/sign-in', '/sign-up', '/forgot-password', '/app', '/app/sort']) {
       await page.goto(path);
       const overflow = await page.evaluate(() =>
         document.documentElement.scrollWidth - document.documentElement.clientWidth);
