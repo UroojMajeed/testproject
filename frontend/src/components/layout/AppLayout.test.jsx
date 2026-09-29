@@ -130,6 +130,15 @@ describe('the first run does not get the frame', () => {
     expect(screen.queryByRole('navigation', { name: /sections/i })).not.toBeInTheDocument();
   });
 
+  it('offers a way off the account, which the bare funnel had none of', async () => {
+    await renderAt(paths.rate, { needsRate: true, needsFirstAudit: true, completedAudits: 0 });
+
+    // The frame carries sign-out, and the frame is not up yet — so somebody who
+    // signed up with the wrong address, or on somebody else's machine, was stuck
+    // short of clearing their cookies.
+    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
   it('still shows the wordmark while bare, so the funnel is not a blank page', async () => {
     const { container } = await renderAt(paths.rate, { needsRate: true, needsFirstAudit: true, completedAudits: 0 });
 

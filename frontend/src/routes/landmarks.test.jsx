@@ -36,6 +36,7 @@ const PUBLIC_ROUTES = [
   ['sign up', paths.register],
   ['forgot password', paths.forgotPassword],
   ['reset password', `${paths.resetPassword}?token=${'a'.repeat(28)}`],
+  ['verify email', `${paths.verifyEmail}?token=${'a'.repeat(32)}`],
 ];
 
 describe('every page is one document with one main landmark', () => {

@@ -6,6 +6,7 @@ import LoginPage from './features/auth/pages/LoginPage.jsx';
 import RegisterPage from './features/auth/pages/RegisterPage.jsx';
 import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './features/auth/pages/ResetPasswordPage.jsx';
+import VerifyEmailPage from './features/auth/pages/VerifyEmailPage.jsx';
 import { OnboardingGate } from './routes/OnboardingGate.jsx';
 import { AppLayout } from './components/layout/AppLayout.jsx';
 import DashboardPage from './features/dashboard/DashboardPage.jsx';
@@ -39,6 +40,14 @@ export default function App() {
           <Route path={paths.forgotPassword} element={<ForgotPasswordPage />} />
           <Route path={paths.resetPassword} element={<ResetPasswordPage />} />
         </Route>
+
+        {/*
+          Outside the guest routes on purpose. The welcome email is opened by
+          somebody who just signed up and is therefore signed in — bouncing them
+          off it would throw the token away, which is exactly what the missing
+          route used to do.
+        */}
+        <Route path={paths.verifyEmail} element={<VerifyEmailPage />} />
 
         <Route element={<ProtectedRoute />}>
           {/*

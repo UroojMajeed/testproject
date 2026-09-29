@@ -6,6 +6,7 @@ export const paths = Object.freeze({
   register: '/sign-up',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
 
   // Signed in. Kept under /app so the public pages and the product never fight
   // over a URL, and so a signed-out visitor landing anywhere under /app gets the

@@ -37,8 +37,16 @@ export function AppLayout() {
           The mark takes the gutter, not a wrapper around the outlet: the page
           below supplies its own .page-width, and nesting one inside another
           applies the max-width and the side padding twice.
+
+          The way out sits beside it. Onboarding had no sign-out at all — the
+          frame that carries it only appears once setup is finished — so somebody
+          who signed up with the wrong address, or on somebody else's machine, had
+          no way off the account short of clearing their cookies.
         */}
-        <p className="bare-mark page-width"><Logo /></p>
+        <div className="bare-mark page-width">
+          <Logo />
+          <button type="button" className="btn btn-link btn-sm" onClick={logout}>Sign out</button>
+        </div>
         <Outlet />
       </>
     );

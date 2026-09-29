@@ -1137,6 +1137,11 @@ a:hover .logo { color: var(--fg-default); }
   margin-inline: auto;
   margin-block: 0 var(--space-5);
   padding-block: var(--space-6) 0;
+  // The mark and the way out, at opposite ends.
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .shell {
