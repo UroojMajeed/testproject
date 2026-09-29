@@ -48,6 +48,18 @@ export const NAV = Object.freeze([
     ),
   },
   {
+    to: paths.handover,
+    label: 'Hand over',
+    hint: 'What to stop doing, and what that takes',
+    icon: (
+      <>
+        <path d="M3 11.5 7 8v2.5h6.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M21 14.5 17 18v-2.5h-6.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M13.5 10.5H21M10.5 15.5H3" strokeLinecap="round" />
+      </>
+    ),
+  },
+  {
     to: paths.rate,
     label: 'Your rate',
     hint: 'The planning estimate everything is priced at',

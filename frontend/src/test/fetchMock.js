@@ -115,6 +115,16 @@ export const signedInWorkspace = (over = {}) => ({
   ] }),
   'GET /api/v1/workspace/activities/unsorted': success({ activities: [] }),
   'GET /api/v1/workspace/rate': success({ rate: DASHBOARD.rate }),
+  'GET /api/v1/workspace/handovers/plan': success({
+    candidates: [{
+      activityId: 'a1', name: 'Invoicing', quadrant: 'delegate', estimatedMinutes: 240,
+      estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000, handoverId: null,
+    }],
+    rate: DASHBOARD.rate,
+    totals: { count: 1, estimatedMinutes: 240, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+    breakEvenMinorPerHour: DASHBOARD.rate.rateMinorPerHour,
+  }),
+  'GET /api/v1/workspace/handovers': success({ handovers: [] }),
   // Reachable from the frame's nav on every signed-in screen now, so it belongs
   // here rather than in the one test file that used to be the only way in.
   'GET /api/v1/workspace/audits/current': success({

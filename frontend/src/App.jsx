@@ -13,6 +13,7 @@ import DashboardPage from './features/dashboard/DashboardPage.jsx';
 import RatePage from './features/rate/RatePage.jsx';
 import AuditPage from './features/audit/AuditPage.jsx';
 import ActivitiesPage from './features/activities/ActivitiesPage.jsx';
+import HandoverPage from './features/handover/HandoverPage.jsx';
 
 /**
  * The skip link lives here, once, and every page supplies the `<main id="main">`
@@ -66,6 +67,7 @@ export default function App() {
               <Route path={paths.rate} element={<RatePage />} />
               <Route path={paths.audit} element={<AuditPage />} />
               <Route path={paths.activities} element={<ActivitiesPage />} />
+              <Route path={paths.handover} element={<HandoverPage />} />
             </Route>
           </Route>
         </Route>

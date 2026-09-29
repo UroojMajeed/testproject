@@ -77,6 +77,37 @@ export const DASHBOARD = {
   weeksRecorded: 1,
 };
 
+/** The draining activity step 4 proposes handing over. */
+export const HANDOVER_CANDIDATE = Object.freeze({
+  activityId: 'a1', name: 'Invoicing', quadrant: 'delegate', estimatedMinutes: 240,
+  estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000, handoverId: null,
+});
+
+const HANDOVER_STEPS = [
+  { key: 'record', title: 'Record yourself doing it once', detail: 'Screen recorder on, start to finish.' },
+  { key: 'done_looks_like', title: 'Write down what "done" looks like', detail: 'One or two lines.' },
+  { key: 'access', title: 'List the access it needs', detail: 'Every login, inbox, folder and tool.' },
+];
+
+const newHandover = (activityId) => ({
+  id: 'h1',
+  activityId,
+  status: 'planned',
+  assignee: '',
+  notes: '',
+  steps: HANDOVER_STEPS.map((step) => ({ ...step, done: false, doneAt: null })),
+  doneCount: 0,
+  stepCount: HANDOVER_STEPS.length,
+  estimatedMinutesPerWeek: 240,
+  estimatedAnnualCostMinor: 300000,
+  rateMinorPerHour: RATE.rateMinorPerHour,
+  currency: RATE.currency,
+  quadrant: 'delegate',
+  startedAt: null,
+  completedAt: null,
+  createdAt: '2026-09-25T00:00:00.000Z',
+});
+
 /** The deck the sort screen works through. Reset per stub, since answering empties it. */
 export const UNSORTED = [
   { id: 'a3', name: 'Bookkeeping', value: null, valueSetAt: null, archived: false, createdAt: '2026-09-01T00:00:00.000Z' },
@@ -104,6 +135,7 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
     unsorted: unsorted.map((row) => ({ ...row })),
     // Cloned per stub, because this screen renames and archives them in place.
     activities: ACTIVITIES.map((row) => ({ ...row })),
+    handovers: [],
     // The gate is about the *first* sort, so one answer opens it for good — which
     // is what lets a test walk the deck to the end and land on the dashboard.
     sortedAny: false,
@@ -142,6 +174,38 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
      * "No such activity" — the sort screen broke and the message named a
      * concept the request had nothing to do with.
      */
+    const stepMatch = request.method() === 'PUT'
+      && path.match(/^\/api\/v1\/workspace\/handovers\/([^/]+)\/steps\/([^/]+)$/);
+    if (stepMatch) {
+      const [, , key] = stepMatch;
+      const found = state.handovers[0];
+      if (!found) return route.fulfill(fail(404, 'NOT_FOUND', 'No such handover'));
+
+      const step = found.steps.find((s) => s.key === key);
+      if (!step) return route.fulfill(fail(404, 'NOT_FOUND', 'No such step'));
+      step.done = body.done;
+      step.doneAt = body.done ? new Date().toISOString() : null;
+
+      // Status follows the boxes, as the server derives it.
+      found.doneCount = found.steps.filter((s) => s.done).length;
+      found.status = found.doneCount === 0 ? 'planned'
+        : found.doneCount === found.stepCount ? 'done' : 'in_progress';
+      return route.fulfill(ok({ handover: { ...found } }));
+    }
+
+    const handoverMatch = ['PATCH', 'DELETE'].includes(request.method())
+      && path.match(/^\/api\/v1\/workspace\/handovers\/([^/]+)$/);
+    if (handoverMatch) {
+      const found = state.handovers[0];
+      if (!found) return route.fulfill(fail(404, 'NOT_FOUND', 'No such handover'));
+      if (request.method() === 'DELETE') {
+        state.handovers = [];
+        return route.fulfill({ status: 204, body: '' });
+      }
+      Object.assign(found, body);
+      return route.fulfill(ok({ handover: { ...found } }));
+    }
+
     const activityMatch = ['PATCH', 'DELETE'].includes(request.method())
       && path.match(/^\/api\/v1\/workspace\/activities\/([^/]+)$/);
     if (activityMatch) {
@@ -280,6 +344,28 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
             totalEstimatedMinutes: 300,
           },
         ] }));
+
+      // ── Step 4 ────────────────────────────────────────────────────────
+      case '/api/v1/workspace/handovers/plan':
+        return route.fulfill(ok({
+          candidates: state.handovers.length
+            ? [{ ...HANDOVER_CANDIDATE, handoverId: state.handovers[0].id }]
+            : [HANDOVER_CANDIDATE],
+          rate: RATE,
+          totals: state.handovers.length
+            ? { count: 0, estimatedMinutes: 0, estimatedWeeklyCostMinor: 0, estimatedAnnualCostMinor: 0 }
+            : { count: 1, estimatedMinutes: 240, estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
+          breakEvenMinorPerHour: RATE.rateMinorPerHour,
+        }));
+
+      case '/api/v1/workspace/handovers': {
+        if (request.method() === 'POST') {
+          const made = newHandover(body.activityId);
+          state.handovers.push(made);
+          return route.fulfill(ok({ handover: made }, 201));
+        }
+        return route.fulfill(ok({ handovers: state.handovers }));
+      }
 
       case '/api/v1/workspace/dashboard':
         return route.fulfill(ok(dashboard));

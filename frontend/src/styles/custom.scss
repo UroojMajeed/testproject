@@ -1666,3 +1666,133 @@ a:hover .logo { color: var(--fg-default); }
   opacity: 0.85;
   max-width: var(--measure);
 }
+
+// ── Step 4: handing it over ─────────────────────────────────────────────────
+
+.candidates,
+.handovers {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.candidate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3) var(--space-4);
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+// The same two colours the matrix uses for these quadrants, so a row here is
+// recognisably the same thing as a cell there.
+.candidate[data-quadrant='replace'] { border-left-color: var(--fg-danger); }
+.candidate[data-quadrant='delegate'] { border-left-color: var(--fg-warning); }
+
+.candidate__name { margin: 0; font-family: var(--font-serif); font-size: var(--text-lg); }
+.candidate__meaning { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--fg-subtle); }
+.candidate__cost { margin: 0; font-size: var(--text-sm); color: var(--fg-muted); white-space: nowrap; }
+
+@media (max-width: 46rem) {
+  .candidate { grid-template-columns: 1fr; }
+  .candidate__cost { white-space: normal; }
+}
+
+.handover {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+// Finished, not gone. The record of how something was handed over is worth
+// keeping, and a card that vanished would take the only proof with it.
+.handover.is-done { background: var(--bg-success-subtle); border-color: var(--border-success); }
+
+.handover__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-4);
+}
+
+.handover__name { margin: 0; font-size: var(--text-lg); }
+.handover__cost { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--fg-muted); }
+.handover__stamp { color: var(--fg-subtle); }
+.handover__progress { margin: 0; font-size: var(--text-sm); color: var(--fg-subtle); white-space: nowrap; }
+
+.handover__steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.handover__check {
+  display: grid;
+  // Box, then the title and the detail stacked beside it.
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 var(--space-3);
+  align-items: start;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  cursor: pointer;
+  border-radius: var(--radius);
+
+  &:hover { background: var(--bg-sunken); }
+
+  input { margin-top: 0.15em; grid-row: 1 / span 2; }
+}
+
+.handover__step-title { grid-column: 2; font-weight: var(--weight-medium); }
+
+.handover__step-detail {
+  grid-column: 2;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-subtle);
+}
+
+// Struck through, not hidden: what is already done is how you know where you are.
+.handover__step.is-done .handover__step-title {
+  text-decoration: line-through;
+  color: var(--fg-subtle);
+  font-weight: var(--weight-normal);
+}
+
+.handover__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.handover__assignee { display: block; margin: 0; max-width: 18rem; flex: 1 1 12rem; }
+
+.handover__assignee-label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--fg-subtle);
+  margin-bottom: var(--space-1);
+}
+
+.handover__confirm { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); color: var(--fg-muted); }
+.handover__drop { --bs-btn-color: var(--fg-subtle); }
+
+.handover__done {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--fg-success-subtle);
+}

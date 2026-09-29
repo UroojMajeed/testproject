@@ -136,3 +136,61 @@ export function useDashboard() {
     queryFn: () => api.get(endpoints.workspace.dashboard()),
   });
 }
+
+/**
+ * What is worth handing over, and what it is costing to keep.
+ *
+ * Computed from the same dashboard figures rather than stored, so it is always
+ * current — and refetched on mount, because starting a handover changes it.
+ */
+export function useHandoverPlan() {
+  return useQuery({
+    queryKey: ['workspace', 'handovers', 'plan'],
+    queryFn: () => api.get(endpoints.workspace.handoverPlan()),
+    staleTime: 0,
+  });
+}
+
+export function useHandovers() {
+  return useQuery({
+    queryKey: ['workspace', 'handovers', 'list'],
+    queryFn: () => api.get(endpoints.workspace.handovers()),
+  });
+}
+
+export function useStartHandover() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (activityId) => api.post(endpoints.workspace.handovers(), { activityId }),
+    // Starting one moves an activity out of the candidates and into the list, so
+    // both have to be refetched or the same thing appears twice.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace'] }),
+  });
+}
+
+/**
+ * Ticking a box.
+ *
+ * Invalidates nothing. A checklist that refetched on every tick would reorder
+ * itself under the cursor of somebody working down it; the screen holds the
+ * server's answer for the row it just changed.
+ */
+export function useSetHandoverStep() {
+  return useMutation({
+    mutationFn: ({ id, key, done }) => api.put(endpoints.workspace.handoverStep(id, key), { done }),
+  });
+}
+
+export function useUpdateHandover() {
+  return useMutation({
+    mutationFn: ({ id, ...patch }) => api.patch(endpoints.workspace.handover(id), patch),
+  });
+}
+
+export function useDropHandover() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.del(endpoints.workspace.handover(id)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace'] }),
+  });
+}

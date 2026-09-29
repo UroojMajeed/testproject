@@ -68,6 +68,17 @@ export const endpoints = Object.freeze({
     // PUT { entries[], isTypical?, status? } → 200 { week }
     audit: (weekStarting) => `${API_BASE}/workspace/audits/${weekStarting}`,
 
+    // → 200 { candidates, rate, totals, breakEvenMinorPerHour }
+    //   candidates are the Replace and Delegate activities; handoverId is set on
+    //   any already under way.
+    handoverPlan: () => `${API_BASE}/workspace/handovers/plan`,
+    // → 200 { handovers } · POST { activityId } → 201 { handover }
+    handovers: () => `${API_BASE}/workspace/handovers`,
+    // PATCH { assignee?, notes? } → 200 { handover } · DELETE → 204
+    handover: (id) => `${API_BASE}/workspace/handovers/${id}`,
+    // PUT { done } → 200 { handover }
+    handoverStep: (id, key) => `${API_BASE}/workspace/handovers/${id}/steps/${key}`,
+
     // → 200 { week, rate, activities, matrix, unsortedCount, totals, worst, weeksRecorded }
     //   matrix: { delegate, replace, invest, produce }, each { activities, count,
     //   estimatedMinutes, estimatedWeeklyCostMinor, estimatedAnnualCostMinor }
