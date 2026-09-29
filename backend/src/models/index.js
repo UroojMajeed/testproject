@@ -4,3 +4,4 @@ export { Workspace } from './Workspace.js';
 export { BuybackRate, RATE_FORMULA_VERSION } from './BuybackRate.js';
 export { Activity, ACTIVITY_VALUES } from './Activity.js';
 export { AuditWeek, ENERGY_MIN, ENERGY_MAX } from './AuditWeek.js';
+export { Handover, HANDOVER_STATUSES } from './Handover.js';

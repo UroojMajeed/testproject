@@ -4,11 +4,15 @@ import * as rates from '../rates/rate.controller.js';
 import * as activities from '../activities/activity.controller.js';
 import * as audits from '../audits/audit.controller.js';
 import * as dashboard from '../dashboard/dashboard.controller.js';
+import * as handovers from '../handovers/handover.controller.js';
 import { setRateSchema } from '../rates/rate.validation.js';
 import {
   createActivitySchema, renameActivitySchema, activityIdSchema, setValueSchema,
 } from '../activities/activity.validation.js';
 import { saveWeekSchema, weekParamSchema } from '../audits/audit.validation.js';
+import {
+  startHandoverSchema, handoverIdSchema, setStepSchema, updateHandoverSchema,
+} from '../handovers/handover.validation.js';
 import { validate } from '../../middleware/validate.middleware.js';
 import { requireAuth } from '../../middleware/auth.middleware.js';
 import { withWorkspace } from '../../middleware/workspace.middleware.js';
@@ -52,3 +56,16 @@ workspaceRouter.get('/audits/:weekStarting', validate(weekParamSchema), audits.s
 workspaceRouter.put('/audits/:weekStarting', validate(saveWeekSchema), audits.save);
 
 workspaceRouter.get('/dashboard', dashboard.show);
+
+/**
+ * Step 4: what to do about the draining half of the week.
+ *
+ * /plan is computed and holds nothing; the rest are the checklist itself. The
+ * fixed path goes before the parameterised one, or ":id" swallows "plan".
+ */
+workspaceRouter.get('/handovers/plan', handovers.plan);
+workspaceRouter.get('/handovers', handovers.list);
+workspaceRouter.post('/handovers', validate(startHandoverSchema), handovers.start);
+workspaceRouter.patch('/handovers/:id', validate(updateHandoverSchema), handovers.update);
+workspaceRouter.put('/handovers/:id/steps/:key', validate(setStepSchema), handovers.setStep);
+workspaceRouter.delete('/handovers/:id', validate(handoverIdSchema), handovers.drop);
