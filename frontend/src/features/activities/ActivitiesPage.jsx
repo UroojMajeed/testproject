@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
-import { VALUE_ANSWERS } from '../sort/value.js';
+import { VALUE_ANSWERS } from '../../lib/drip.js';
 import { formatDate } from '../../lib/formatters.js';
 import {
   useActivities, useRenameActivity, useArchiveActivity, useSetActivityValue, useRefreshWorkspace,
@@ -60,7 +60,7 @@ export default function ActivitiesPage() {
             ? 'One activity has no answer yet, so it is missing from the matrix.'
             : `${unanswered} activities have no answer yet, so they are missing from the matrix.`}
           {' '}
-          <Link to={paths.sort}>Answer them one at a time</Link>
+          <Link to={paths.app}>Answer them on your week</Link>
         </p>
       ) : null}
 

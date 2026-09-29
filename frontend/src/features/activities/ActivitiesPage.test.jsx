@@ -257,11 +257,11 @@ describe('the activities list', () => {
     expect(archived).toBeDisabled();
   });
 
-  it('points anything unanswered at the screen that asks one at a time', async () => {
+  it('points anything unanswered at the dashboard, where answering places it', async () => {
     await renderPage();
 
     expect(screen.getByText(/one activity has no answer yet/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /answer them one at a time/i })).toHaveAttribute('href', '/app/sort');
+    expect(screen.getByRole('link', { name: /answer them on your week/i })).toHaveAttribute('href', '/app');
   });
 
   it('has something to say before a week has ever been recorded', async () => {

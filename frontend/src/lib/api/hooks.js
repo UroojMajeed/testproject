@@ -116,6 +116,20 @@ export function useSaveAudit(weekStarting) {
   });
 }
 
+/**
+ * Every completed week, for the trend on the dashboard.
+ *
+ * A single week's figures are a fact; two are a direction. The endpoint already
+ * existed for this — the comparison is the client's to make, not a new thing for
+ * the server to compute.
+ */
+export function useAudits() {
+  return useQuery({
+    queryKey: ['workspace', 'audits'],
+    queryFn: () => api.get(endpoints.workspace.audits()),
+  });
+}
+
 export function useDashboard() {
   return useQuery({
     queryKey: ['workspace', 'dashboard'],

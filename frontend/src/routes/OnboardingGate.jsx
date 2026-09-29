@@ -16,6 +16,11 @@ import { paths } from './paths.js';
  * Nobody should ever reach an empty dashboard, so the first audit is a gate. After
  * that it is a prompt, not a gate — missing a Friday must not lock someone out of
  * figures they already have.
+ *
+ * There was briefly a third gate, for the first sort. It was wrong: the value
+ * question is one more screen between a person and the figures they came for, and
+ * it belongs on the dashboard beside the matrix it fills in — where answering it
+ * visibly does something — rather than standing in the way of it.
  */
 export function OnboardingGate() {
   const { data, isPending, isError, error, refetch } = useWorkspaceState();
@@ -38,8 +43,7 @@ export function OnboardingGate() {
    */
   const wanted = data.needsRate ? paths.rate
     : data.needsFirstAudit ? paths.audit
-      : data.needsFirstSort ? paths.sort
-        : null;
+      : null;
 
   // Past onboarding: everything is open.
   if (!wanted) return <Outlet />;
@@ -55,11 +59,7 @@ export function OnboardingGate() {
    * So: the dashboard is what is gated. Standing on a step you have already done
    * is always allowed.
    */
-  const reachable = data.needsRate
-    ? [paths.rate]
-    : data.needsFirstAudit
-      ? [paths.rate, paths.audit]
-      : [paths.rate, paths.audit, paths.sort];
+  const reachable = data.needsRate ? [paths.rate] : [paths.rate, paths.audit];
   if (reachable.includes(location.pathname)) return <Outlet />;
 
   return <Navigate to={wanted} replace />;

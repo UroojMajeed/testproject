@@ -46,7 +46,7 @@ test.describe('the activities list', () => {
   test('an answer here makes the dashboard go and ask again', async ({ page }) => {
     const api = await stubApi(page, { signedIn: true });
     await page.goto('/app');
-    await expect(page.locator('.quadrant[data-quadrant="delegate"]')).toContainText('Invoicing');
+    await expect(page.locator('.drip__cell[data-quadrant="delegate"]')).toContainText('Invoicing');
 
     const before = api.callsTo('/api/v1/workspace/dashboard').length;
 

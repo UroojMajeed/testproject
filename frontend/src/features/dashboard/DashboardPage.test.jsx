@@ -127,17 +127,24 @@ describe('what last week cost', () => {
 });
 
 describe('what to do about it', () => {
-  it('groups the activities into the quadrants that have anything in them', async () => {
+  it('draws all four quadrants, because a 2x2 missing a corner is not a 2x2', async () => {
     await renderDashboard();
 
     expect(screen.getByRole('heading', { name: /what to do about it/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Delegate' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Produce' })).toBeInTheDocument();
+    for (const name of ['Replace', 'Delegate', 'Produce', 'Invest']) {
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+    }
+    // An empty quadrant is itself worth seeing — an empty Replace says something.
+    expect(screen.getAllByText(/nothing here\./i).length).toBeGreaterThan(0);
+  });
 
-    // An empty Replace block is a heading promising something and delivering an
-    // empty list. Better to say nothing about a quadrant nothing landed in.
-    expect(screen.queryByRole('heading', { name: 'Replace' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Invest' })).not.toBeInTheDocument();
+  it('labels the axes in the words the questions were asked in', async () => {
+    await renderDashboard();
+
+    // So the grid can be checked against the answers actually given.
+    expect(screen.getByText('Matters more')).toBeInTheDocument();
+    expect(screen.getByText('Drains you')).toBeInTheDocument();
+    expect(screen.getByText('Energises you')).toBeInTheDocument();
   });
 
   it('says what each quadrant means and what to do, not just its name', async () => {
@@ -179,25 +186,19 @@ describe('what to do about it', () => {
     });
 
     const names = [...screen.getByRole('heading', { name: 'Delegate' }).closest('article')
-      .querySelectorAll('.quadrant__name')].map((el) => el.textContent);
+      .querySelectorAll('.drip__name')].map((el) => el.textContent);
 
     expect(names).toEqual(['Client onboarding', 'Invoicing']);
   });
 
-  it('leads with Replace and Delegate, the two with something to do about them', async () => {
-    await renderDashboard({
-      'GET /api/v1/workspace/dashboard': success({
-        ...DASHBOARD,
-        matrix: {
-          ...DASHBOARD.matrix,
-          replace: { ...DASHBOARD.matrix.delegate },
-        },
-      }),
-    });
+  it('puts the two with something to do about them along the top of the grid', async () => {
+    await renderDashboard();
 
-    const titles = [...document.querySelectorAll('.quadrant__title')].map((el) => el.textContent);
+    // Reading order is the priority order: the eye lands on the top row first, and
+    // Replace and Delegate are the two quadrants that ask for a decision.
+    const titles = [...document.querySelectorAll('.drip__title')].map((el) => el.textContent);
 
-    expect(titles).toEqual(['Replace', 'Delegate', 'Produce']);
+    expect(titles).toEqual(['Replace', 'Produce', 'Delegate', 'Invest']);
   });
 
   it('asks for a sort rather than showing an empty diagram', async () => {
@@ -213,8 +214,9 @@ describe('what to do about it', () => {
       }),
     });
 
-    expect(screen.getByRole('heading', { name: /nothing sorted yet/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /sort your activities/i })).toHaveAttribute('href', '/app/sort');
+    // No longer a dead end pointing at a screen of its own: the question is asked
+    // directly above, and the grid fills in as it is answered.
+    expect(screen.getByRole('heading', { name: /the matrix fills in as you answer/i })).toBeInTheDocument();
     // The figures are still there. The matrix is the extra, not the price of entry.
     expect(screen.getByText('$6,750')).toBeInTheDocument();
   });
@@ -225,7 +227,6 @@ describe('what to do about it', () => {
     });
 
     expect(screen.getByText(/2 activities have no answer yet/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /sort them/i })).toHaveAttribute('href', '/app/sort');
   });
 
   it('counts one properly, because "1 activities" is how software sounds', async () => {

@@ -28,7 +28,7 @@ export function AppLayout() {
   // The gate is reading the same query, so this resolves with it rather than
   // flashing a frame around a screen that is about to be redirected away.
   const onboarding = isPending
-    || Boolean(data?.needsRate || data?.needsFirstAudit || data?.needsFirstSort);
+    || Boolean(data?.needsRate || data?.needsFirstAudit);
 
   if (onboarding) {
     return (

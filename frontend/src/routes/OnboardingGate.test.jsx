@@ -15,7 +15,6 @@ const Tree = () => (
       <Route path={paths.app} element={<h1>Dashboard</h1>} />
       <Route path={paths.rate} element={<h1>Rate</h1>} />
       <Route path={paths.audit} element={<h1>Audit</h1>} />
-      <Route path={paths.sort} element={<h1>Sort</h1>} />
     </Route>
   </Routes>
 );
@@ -69,38 +68,25 @@ describe('where a signed-in person belongs', () => {
   });
 });
 
-describe('the sort gate', () => {
-  it('sends a first-time account to the sort before the dashboard', async () => {
-    // Straight after the first audit the matrix would be empty, on the one visit
-    // that decides whether anybody comes back.
+describe('the sort screen is gone from the flow', () => {
+  /**
+   * It was a third gate for a while. It was wrong: the value question is one more
+   * screen between a person and the figures they came for, and it belongs on the
+   * dashboard beside the matrix it fills in.
+   */
+  it('opens the dashboard once a week is filed, whatever is still unanswered', async () => {
     await renderAt(paths.app, {
       needsRate: false, needsFirstAudit: false, completedAudits: 1,
       needsFirstSort: true, unsortedCount: 3,
     });
-    expect(await landsOn()).toBe('Sort');
-  });
-
-  it('opens the dashboard once anything at all is sorted', async () => {
-    await renderAt(paths.app, {
-      needsRate: false, needsFirstAudit: false, completedAudits: 1,
-      needsFirstSort: false, unsortedCount: 2,
-    });
     expect(await landsOn()).toBe('Dashboard');
   });
 
-  it('lets the sort screen be reached deliberately once the gate is gone', async () => {
-    // A new activity next Friday is a prompt on the dashboard, not a wall — but the
-    // screen still has to be reachable by anybody who follows that prompt.
-    await renderAt(paths.sort, {
+  it('ignores needsFirstSort entirely, however the server answers', async () => {
+    await renderAt(paths.app, {
       needsRate: false, needsFirstAudit: false, completedAudits: 3,
-      needsFirstSort: false, unsortedCount: 1,
+      needsFirstSort: false, unsortedCount: 0,
     });
-    expect(await landsOn()).toBe('Sort');
-  });
-
-  it('will not let the sort be reached before a week is filed', async () => {
-    // Nothing to sort: activities only exist once an audit has named them.
-    await renderAt(paths.sort, { needsRate: false, needsFirstAudit: true });
-    expect(await landsOn()).toBe('Audit');
+    expect(await landsOn()).toBe('Dashboard');
   });
 });

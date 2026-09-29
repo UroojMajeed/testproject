@@ -108,7 +108,26 @@ describe('setting the buyback rate', () => {
    * the middle of a three-step setup that is a ceremony for a number nobody had
    * stopped looking at.
    */
-  it('goes straight on to the audit the first time, with no screen in between', async () => {
+  /**
+   * This has been both ways round and both were wrong. A confirmation screen of
+   * its own repeated a number the form had been showing live and charged a click
+   * for it; navigating straight on gave the moment away entirely — the first real
+   * output of the product went past without being looked at. So: same screen, the
+   * form gives way to the figure.
+   */
+  it('reveals the figure on the same screen rather than handing over to another', async () => {
+    const user = userEvent.setup();
+    await renderRate();
+
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /set my rate/i }));
+
+    expect(await screen.findByRole('heading', { name: /here is what an hour of your time is worth/i }))
+      .toBeInTheDocument();
+    expect(screen.getByText(/worth handing over/i)).toBeInTheDocument();
+  });
+
+  it('offers the way on once the figure has been seen', async () => {
     const user = userEvent.setup();
     await renderRate({}, (
       <Routes>
@@ -119,23 +138,75 @@ describe('setting the buyback rate', () => {
 
     await fill(user);
     await user.click(screen.getByRole('button', { name: /set my rate/i }));
+    await user.click(await screen.findByRole('button', { name: /next|last week/i }));
 
     expect(await screen.findByRole('heading', { name: /where did last week go/i })).toBeInTheDocument();
   });
 
-  it('confirms in place when an existing rate is changed, rather than moving on', async () => {
+  /**
+   * The bug this exists for stranded people. The way onward was conditioned on
+   * whether a rate existed, and saving invalidates that query — so by the time
+   * the figure was on screen the answer had flipped and the button vanished.
+   * First run, no button, no idea what came next.
+   */
+  it('still offers the way on after the query that fed it has refetched', async () => {
     const user = userEvent.setup();
-    // Somebody adjusting their hours later is not in a setup flow and did not ask
-    // to go anywhere; they want to know it took.
-    await renderRate({ 'GET /api/v1/workspace/rate': success({ rate: EXISTING }) });
+    // The rate query answers "none" first and "one now exists" after the save,
+    // which is exactly what invalidating it does in the running app.
+    let served = 0;
+    await renderRate({
+      'GET /api/v1/workspace/rate': () => {
+        served += 1;
+        return success({ rate: served === 1 ? null : SAVED_RATE });
+      },
+    });
+
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /set my rate/i }));
+    await screen.findByRole('heading', { name: /here is what an hour/i });
+
+    // Long enough for the invalidated rate query to come back with a rate.
+    await waitFor(() => expect(screen.getByRole('button', { name: /update my rate/i })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /next.*last week/i })).toBeInTheDocument();
+  });
+
+  it('does not say the same figure twice once it has been revealed', async () => {
+    const user = userEvent.setup();
+    await renderRate();
+
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /set my rate/i }));
+    await screen.findByRole('heading', { name: /here is what an hour/i });
+
+    // The live preview under the form is the same number again while the reveal
+    // is up; it comes back the moment a field is edited.
+    expect(screen.queryByText(/an hour of your time earns/i)).not.toBeInTheDocument();
 
     await user.clear(screen.getByLabelText(/hours you work in a week/i));
-    await user.type(screen.getByLabelText(/hours you work in a week/i), '30');
-    await user.click(screen.getByRole('button', { name: /update my rate/i }));
+    await user.type(screen.getByLabelText(/hours you work in a week/i), '20');
 
-    // role="status", not "alert": saving successfully is not urgent, and an
-    // assertive announcement would interrupt whatever is being read.
-    expect(await screen.findByRole('status')).toHaveTextContent(/saved\. your buyback rate is/i);
+    expect(await screen.findByText(/an hour of your time earns/i)).toBeInTheDocument();
+  });
+
+  it('lets the numbers be changed afterwards, with the figure moving to match', async () => {
+    const user = userEvent.setup();
+    await renderRate();
+
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /set my rate/i }));
+    await screen.findByRole('heading', { name: /here is what an hour/i });
+
+    // The form stays below the figure: "change the numbers and it moves" has to be
+    // true, or it is a screen pretending to be editable.
+    expect(screen.getByLabelText(/hours you work in a week/i)).toBeInTheDocument();
+  });
+
+  it('opens with the existing figures when somebody comes back to change them', async () => {
+    // Following "Change it" from the dashboard used to open an empty form, so
+    // adjusting your hours meant retyping your income from memory.
+    await renderRate({ 'GET /api/v1/workspace/rate': success({ rate: EXISTING }) });
+
+    expect(screen.getByLabelText(/hours you work in a week/i)).toHaveValue(EXISTING.hoursPerWeek);
     expect(screen.getByRole('button', { name: /update my rate/i })).toBeInTheDocument();
   });
 

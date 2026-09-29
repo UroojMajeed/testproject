@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stubApi, UNSORTED } from './apiStub.js';
+import { stubApi } from './apiStub.js';
 
 /**
  * The frame, in a browser.
@@ -56,13 +56,6 @@ test.describe('the frame', () => {
     await expect(page.locator('.logo')).toHaveCount(1);
   });
 
-  test('is not there on the first sort either', async ({ page }) => {
-    await stubApi(page, { signedIn: true, unsorted: UNSORTED });
-    await page.goto('/app/sort');
-
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/one more question each/i);
-    await expect(sections(page)).toHaveCount(0);
-  });
 });
 
 test.describe('the frame on a phone', () => {

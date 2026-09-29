@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
-import { useDashboard, useWorkspaceState } from '../../lib/api/hooks.js';
+import { useDashboard, useWorkspaceState, useAudits } from '../../lib/api/hooks.js';
 import { useAuth } from '../../context/useAuth.js';
 import { formatMoney, formatDuration, formatWeekRange } from '../../lib/money.js';
 import { energyLabel } from '../audit/energy.js';
 import { Matrix } from './Matrix.jsx';
-import { QUADRANT_COPY } from '../sort/value.js';
+import { NeedsAnswer } from './NeedsAnswer.jsx';
+import { Progress } from './Progress.jsx';
+import { QUADRANT_COPY } from '../../lib/drip.js';
 import { paths } from '../../routes/paths.js';
 
 /**
@@ -23,6 +25,9 @@ import { paths } from '../../routes/paths.js';
 export default function DashboardPage() {
   const { data, isPending, isError, error } = useDashboard();
   const { data: state } = useWorkspaceState();
+  // Every week on record, for the trend. No new endpoint: this one already exists
+  // and the comparison is the client's to make.
+  const weeks = useAudits();
   const { user } = useAuth();
 
   if (isPending) return <FullPageSpinner label="Adding up your week" />;
@@ -128,7 +133,17 @@ export default function DashboardPage() {
             </table>
           </section>
 
+          {/*
+            Above the matrix, not below it: answering a row here places the
+            activity in the grid underneath, and the point is to see that happen.
+          */}
+          <NeedsAnswer />
+
           <Matrix matrix={matrix} currency={currency} unsortedCount={unsortedCount} />
+
+          {weeks.data?.weeks?.length ? (
+            <Progress weeks={weeks.data.weeks} rate={rate} currency={currency} />
+          ) : null}
 
           {worst ? (
             <section className="verdict" aria-labelledby="verdict-heading">

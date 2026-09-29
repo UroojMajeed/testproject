@@ -1391,3 +1391,273 @@ a:hover .logo { color: var(--fg-default); }
 
   input { flex: none; }
 }
+
+// ── The value question, on the dashboard ────────────────────────────────────
+
+.needs {
+  margin-top: var(--space-6);
+  background: var(--bg-accent-subtle);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  color: var(--fg-accent-subtle);
+}
+
+.needs__title { font-size: var(--text-lg); margin-bottom: var(--space-2); color: inherit; }
+
+.needs__lede {
+  margin: 0 0 var(--space-4);
+  color: inherit;
+  max-width: var(--measure);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.needs__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+
+.needs__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+}
+
+@media (max-width: 46rem) {
+  .needs__item { grid-template-columns: 1fr; }
+}
+
+.needs__name { margin: 0; color: var(--fg-default); font-weight: var(--weight-medium); }
+.needs__answers { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.needs__choice {
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+
+  &:hover { background: var(--action-bg); border-color: var(--action-bg); color: var(--action-fg); }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 2px var(--focus-halo), 0 0 0 4px var(--focus-ring);
+  }
+}
+
+// ── How it is going ─────────────────────────────────────────────────────────
+
+.progress { margin-top: var(--space-6); }
+
+.progress__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.progress-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.progress-card__label { font-size: var(--text-sm); color: var(--fg-muted); margin: 0 0 var(--space-2); }
+
+.progress-card__value {
+  font-family: var(--font-serif);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--space-1);
+}
+
+.progress-card__note { font-size: var(--text-xs); color: var(--fg-subtle); margin: 0; }
+
+// Down is the win here — fewer draining hours — so the colours are the other way
+// round from where an instinct would put them. The note says which way it went in
+// words, so the colour is never carrying the meaning alone.
+.progress-card[data-trend='down'] .progress-card__value { color: var(--fg-success); }
+.progress-card[data-trend='up'] .progress-card__value { color: var(--fg-danger); }
+
+// ── The DRIP matrix ─────────────────────────────────────────────────────────
+
+.drip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.drip__axis {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+}
+
+.drip__axis--y {
+  grid-column: 1;
+  grid-row: 1;
+  align-items: center;
+  // Read bottom-to-top, as a y axis is.
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  padding-block: var(--space-4);
+  // Deliberately NOT flex-direction: column. Under vertical-rl the block axis is
+  // horizontal, so a column ran the two labels side by side in the middle of the
+  // grid — which read as a rendering fault rather than an axis.
+  //
+  // Reversed because the 180° rotation above reverses them again: the markup says
+  // "matters more" first, and without this it landed at the bottom, beside the
+  // row of quadrants that matter least. An axis pointing the wrong way is worse
+  // than no axis.
+  flex-direction: row-reverse;
+}
+
+.drip__axis--x { grid-column: 2; grid-row: 2; padding-inline: var(--space-4); }
+
+.drip__grid {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.drip__cell {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-top: 3px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+// Decoration. Which quadrant a cell is never depends on it: the title says the
+// word, the sentence under it says what the word means, and the axes say where it
+// sits.
+.drip__cell[data-quadrant='replace'] { border-top-color: var(--fg-danger); }
+.drip__cell[data-quadrant='delegate'] { border-top-color: var(--fg-warning); }
+.drip__cell[data-quadrant='produce'] { border-top-color: var(--fg-success); }
+.drip__cell[data-quadrant='invest'] { border-top-color: var(--accent-solid); }
+
+.drip__head { margin-bottom: var(--space-3); }
+.drip__title { font-size: var(--text-lg); font-weight: var(--weight-semibold); margin-bottom: var(--space-1); }
+.drip__meaning { font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--fg-muted); margin: 0; }
+
+.drip__list { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: var(--space-2); }
+
+.drip__item {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--text-sm);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.drip__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.drip__name { color: var(--fg-default); }
+.drip__hours { color: var(--fg-muted); white-space: nowrap; }
+
+.drip__empty { font-size: var(--text-sm); color: var(--fg-subtle); margin: 0 0 var(--space-3); }
+
+.drip__total {
+  // Pushed to the bottom so the totals line up across cells of different heights,
+  // which is what makes two quadrants comparable at a glance.
+  margin: auto 0 var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.drip__total strong { color: var(--fg-default); font-weight: var(--weight-semibold); }
+.drip__action { font-size: var(--text-sm); line-height: var(--leading-normal); color: var(--fg-subtle); margin: 0; }
+
+// A 2×2 at 390px is four columns of nothing. The axes stop meaning anything once
+// the cells stack, so they go with them.
+@media (max-width: 48rem) {
+  .drip { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .drip__axis { display: none; }
+  .drip__grid { grid-column: 1; grid-row: 1; grid-template-columns: minmax(0, 1fr); }
+}
+
+// ── The rate, revealed ──────────────────────────────────────────────────────
+// The first real output of the product. It gets a moment.
+
+.reveal {
+  background: var(--bg-accent-subtle);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-5);
+  margin-bottom: var(--space-6);
+  color: var(--fg-accent-subtle);
+}
+
+.reveal__figure {
+  font-family: var(--font-serif);
+  font-size: var(--text-display);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0 0 var(--space-3);
+  color: inherit;
+  animation: reveal-figure var(--duration-slow) var(--ease) both;
+}
+
+@keyframes reveal-figure {
+  from { opacity: 0; transform: translateY(0.35em) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.reveal__unit {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-normal);
+  opacity: 0.8;
+}
+
+.reveal__line {
+  margin: 0 0 var(--space-5);
+  max-width: var(--measure);
+  color: inherit;
+}
+
+.reveal__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-accent);
+}
+
+.reveal__facts dt { font-size: var(--text-sm); opacity: 0.85; margin-bottom: var(--space-1); }
+
+.reveal__facts dd {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  color: inherit;
+}
+
+.reveal__note {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-sm);
+  opacity: 0.85;
+  max-width: var(--measure);
+}

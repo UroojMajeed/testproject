@@ -35,6 +35,15 @@ export default function RatePage() {
   const { data: existing, isPending: rateLoading } = useRate();
   const setRate = useSetRate();
   const [saved, setSaved] = useState(null);
+  /**
+   * Whether this save was the first one, latched when it happens.
+   *
+   * Not derived from whether a rate exists: saving invalidates that query, so by
+   * the time the figure was on screen the answer had flipped and the way onward
+   * disappeared with it. Somebody setting their rate for the first time was left
+   * on a dead end with no button and no idea what came next.
+   */
+  const [wasFirst, setWasFirst] = useState(false);
 
   const current = existing?.rate;
   const currency = current?.currency ?? 'USD';
@@ -95,20 +104,31 @@ export default function RatePage() {
    * setting their rate for the first time is in the middle of a three-step setup
    * and wants the next step; somebody adjusting it later wants to know it took.
    */
+  /**
+   * Saving reveals the figure here, on the same screen, rather than handing over
+   * to another one.
+   *
+   * This has been both ways round and both were wrong. A separate confirmation
+   * screen repeated a number the form had been showing live and charged a click
+   * for it; navigating straight on gave the moment away entirely — the first real
+   * output of the product, and it went past without being looked at. So the form
+   * gives way to the result in place: same screen, one number, said properly.
+   */
   const { pending, formError, run } = useSubmit({
     setError,
     onSuccess: (result) => {
-      if (current) setSaved(result.rate);
-      else navigate(paths.audit, { replace: true });
+      setSaved(result.rate);
     },
   });
 
-  const onSubmit = (form) =>
-    run(() => setRate.mutateAsync({
+  const onSubmit = (form) => {
+    setWasFirst(!current);
+    return run(() => setRate.mutateAsync({
       annualIncomeMinor: toMinor(form.annualIncome),
       hoursPerWeek: form.hoursPerWeek,
       weeksPerYear: form.weeksPerYear,
     }));
+  };
 
   /**
    * Waits for the existing rate before drawing the form.
@@ -124,20 +144,18 @@ export default function RatePage() {
   return (
     <main id="main" tabIndex={-1} className="page-width app-page measure">
 
-      <h1 className="app-header__title">What is an hour of your time worth?</h1>
+      <h1 className="app-header__title">
+        {saved ? 'Here is what an hour of your time is worth' : 'What is an hour of your time worth?'}
+      </h1>
       <p className="app-header__subtitle mb-5">
-        Three numbers, roughly. Everything the product tells you afterwards is priced against this,
-        so an honest guess beats a flattering one.
+        {saved
+          ? 'Everything from here is priced against this figure. Change the numbers below and it moves.'
+          : 'Three numbers, roughly. Everything the product tells you afterwards is priced against this, so an honest guess beats a flattering one.'}
       </p>
 
       <Alert tone="error">{formError}</Alert>
 
-      {saved ? (
-        <Alert tone="success">
-          Saved. Your buyback rate is{' '}
-          <strong className="numeric">{formatMoney(saved.rateMinorPerHour, saved.currency)}</strong> an hour.
-        </Alert>
-      ) : null}
+      {saved ? <RateResult rate={saved} onNext={() => navigate(paths.audit)} isFirst={wasFirst} /> : null}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/*
@@ -184,7 +202,14 @@ export default function RatePage() {
           {...register('weeksPerYear')}
         />
 
-        {preview ? (
+        {/*
+          Only while it would say something new. With the figure revealed above, an
+          identical panel underneath is the same number said twice — so the test is
+          simply whether the numbers in the form still give the answer on display.
+          Change one and the preview returns, which is what makes "change the
+          numbers below and it moves" true rather than a claim.
+        */}
+        {preview && (!saved || preview.buyback !== saved.rateMinorPerHour) ? (
           <div className="rate-preview" aria-live="polite">
             <p className="rate-preview__line">
               An hour of your time earns <strong className="numeric">{formatMoney(preview.effective, currency)}</strong>
@@ -209,5 +234,59 @@ export default function RatePage() {
         </SubmitButton>
       </form>
     </main>
+  );
+}
+
+/**
+ * The figure, revealed.
+ *
+ * The number on its own is abstract — "$16 an hour" means nothing until it is
+ * attached to a decision — so it arrives with the sentence that makes it usable:
+ * anything somebody else will do for less than this is worth handing over. The
+ * week and the year are there because an hourly figure is easy to shrug at and
+ * "two hours a week is £1,600 a year" is not.
+ *
+ * `key` on the figure restarts the entrance animation when the number changes, so
+ * adjusting the hours and saving again reads as a new answer rather than a static
+ * panel that quietly updated. Nothing moves for anyone who asked for less motion;
+ * the reduced-motion block in custom.scss sees to that.
+ */
+function RateResult({ rate, onNext, isFirst }) {
+  const hourly = rate.rateMinorPerHour;
+
+  return (
+    <section className="reveal" aria-labelledby="reveal-figure">
+      <p className="reveal__figure numeric" id="reveal-figure" key={hourly}>
+        {formatMoney(hourly, rate.currency)}
+        <span className="reveal__unit"> an hour</span>
+      </p>
+
+      <p className="reveal__line">
+        That is your buyback rate. Anything somebody else will do for less than this
+        is worth handing over.
+      </p>
+
+      <dl className="reveal__facts">
+        <div>
+          <dt>An hour a week, for a year</dt>
+          <dd className="numeric">{formatMoney(hourly * rate.weeksPerYear, rate.currency)}</dd>
+        </div>
+        <div>
+          <dt>Five hours a week, for a year</dt>
+          <dd className="numeric">{formatMoney(hourly * 5 * rate.weeksPerYear, rate.currency)}</dd>
+        </div>
+      </dl>
+
+      <p className="reveal__note">
+        A planning estimate, not a wage and not a valuation — a quarter of what you earn,
+        which is the conservative end on purpose.
+      </p>
+
+      {isFirst ? (
+        <button type="button" className="btn btn-primary" onClick={onNext}>
+          Next: where last week went
+        </button>
+      ) : null}
+    </section>
   );
 }

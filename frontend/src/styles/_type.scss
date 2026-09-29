@@ -118,6 +118,9 @@ $tap-target: 44px;
 // The curve starts fast and settles — movement that begins slowly reads as lag.
 $duration-fast: 120ms;
 $duration: 180ms;
+// A one-off moment rather than a state change: 180ms is over before it has been
+// noticed, which is the wrong answer for the first figure the product produces.
+$duration-slow: 420ms;
 $ease: cubic-bezier(0.2, 0, 0.1, 1);
 
 :root {
@@ -140,5 +143,6 @@ $ease: cubic-bezier(0.2, 0, 0.1, 1);
 
   --duration-fast: #{$duration-fast};
   --duration: #{$duration};
+  --duration-slow: #{$duration-slow};
   --ease: #{$ease};
 }

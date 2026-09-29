@@ -260,6 +260,27 @@ export async function stubApi(page, { signedIn = false, onboarding = {}, unsorte
           isNew: !currentWeekFiled,
         }));
 
+      // Every completed week, for the trend cards. Two weeks so the comparison
+      // has something to compare against.
+      case '/api/v1/workspace/audits':
+        return route.fulfill(ok({ weeks: [
+          {
+            id: 'w1', weekStarting: '2026-09-14', weekEnding: '2026-09-20', timezone: 'UTC',
+            status: 'complete', isTypical: true, completedAt: '2026-09-19T10:00:00.000Z',
+            entries: [
+              { activityId: 'a1', estimatedMinutes: 240, energy: -2 },
+              { activityId: 'a2', estimatedMinutes: 360, energy: 2 },
+            ],
+            totalEstimatedMinutes: 600,
+          },
+          {
+            id: 'w0', weekStarting: '2026-09-07', weekEnding: '2026-09-13', timezone: 'UTC',
+            status: 'complete', isTypical: true, completedAt: '2026-09-12T10:00:00.000Z',
+            entries: [{ activityId: 'a1', estimatedMinutes: 300, energy: -2 }],
+            totalEstimatedMinutes: 300,
+          },
+        ] }));
+
       case '/api/v1/workspace/dashboard':
         return route.fulfill(ok(dashboard));
 
