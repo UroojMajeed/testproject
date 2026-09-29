@@ -50,7 +50,48 @@ export const envSchema = z.object({
   LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-});
+
+  /**
+   * Where outgoing mail goes.
+   *
+   *   smtp    a real server, from the SMTP_* settings below
+   *   file    an .eml written to MAIL_OUTBOX, for development — openable, and
+   *           proof the message was actually built
+   *   log     a line in the log and nothing else, for the test suite
+   *
+   * The default is `file` rather than `smtp` so a fresh clone can exercise the
+   * whole reset flow without an account anywhere. Production is not allowed to
+   * keep that default — see the refinement below.
+   */
+  MAIL_TRANSPORT: z.enum(['smtp', 'file', 'log']).default('file'),
+  MAIL_FROM: z.string().default('ReclaimOS <no-reply@reclaimos.local>'),
+  MAIL_OUTBOX: z.string().default('.outbox'),
+
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Implicit TLS on 465; STARTTLS on 587. Wrong either way is a connection that
+  // hangs rather than an error, so it is worth being explicit.
+  SMTP_SECURE: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+})
+  /**
+   * The failure this exists to stop.
+   *
+   * Password reset issued a token, logged it, and sent nothing. Every test passed,
+   * the endpoint answered 200, and the only person who found out was a user
+   * locked out of their account. A silent no-op is the worst possible default for
+   * mail, so production has to name a real transport and give it somewhere to
+   * connect — and is refused at boot if it does not.
+   */
+  .refine(
+    (v) => v.NODE_ENV !== 'production' || v.MAIL_TRANSPORT === 'smtp',
+    { path: ['MAIL_TRANSPORT'], message: 'must be "smtp" in production — mail that goes nowhere is worse than no mail' },
+  )
+  .refine(
+    (v) => v.MAIL_TRANSPORT !== 'smtp' || Boolean(v.SMTP_HOST),
+    { path: ['SMTP_HOST'], message: 'is required when MAIL_TRANSPORT is "smtp"' },
+  );
 
 /** The database a connection string names, or null when it names none. */
 export function databaseNameFrom(uri = '') {

@@ -10,6 +10,15 @@ import * as workspaces from '../workspaces/workspace.service.js';
 
 const REFRESH_TTL_MS = () => env.JWT_REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000;
 const RESET_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * The same window, in the unit the email says it in.
+ *
+ * Exported so the message quotes the real expiry rather than a number typed into
+ * a template — those drift apart, and an email that promises an hour on a link
+ * that dies in thirty minutes is a support ticket.
+ */
+export const RESET_TTL_MINUTES = RESET_TTL_MS / 60_000;
 const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Issues a refresh token row and returns the raw value — shown once, never stored. */

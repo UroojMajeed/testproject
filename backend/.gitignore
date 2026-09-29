@@ -8,3 +8,6 @@ coverage/
 # Local scratch
 .mongod-dev.mjs
 .conflict-probe.mjs
+
+# Development mail: real .eml files, and they can contain reset tokens.
+.outbox/

@@ -1,9 +1,9 @@
 import * as service from './auth.service.js';
+import * as mail from '../mail/mail.service.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { ok, created, noContent } from '../../utils/ApiResponse.js';
 import { REFRESH_COOKIE, refreshCookieOptions } from '../../utils/token.js';
 import { serializeUser } from '../users/user.serializer.js';
-import { logger } from '../../config/logger.js';
 
 const ctxOf = (req) => ({ ip: req.ip, userAgent: req.get('user-agent') });
 
@@ -19,9 +19,12 @@ export const register = asyncHandler(async (req, res) => {
   const { accessToken, refresh, user, verifyToken } = await service.register(req.body, ctxOf(req));
   setRefreshCookie(res, refresh);
 
-  // TODO(step 2): hand verifyToken to the mailer.
-  logger.debug({ userId: String(user._id) }, 'verification token issued');
-  void verifyToken;
+  /*
+   * Not awaited. Sign-up should not wait on a mail server, and must not fail
+   * because one is down — the account exists either way, and mail.service logs
+   * loudly rather than throwing.
+   */
+  void mail.sendVerifyEmail({ to: user.email, name: user.name, token: verifyToken });
 
   return created(res, { accessToken, user: serializeUser(user) });
 });
@@ -58,7 +61,21 @@ export const me = asyncHandler(async (req, res) => ok(res, { user: serializeUser
 /** Identical response whether or not the address exists. */
 export const forgotPassword = asyncHandler(async (req, res) => {
   const result = await service.requestPasswordReset(req.body.email);
-  if (result) logger.debug({ userId: String(result.user._id) }, 'reset token issued');
+
+  /*
+   * Sent when the address exists, and the response is identical either way — so
+   * the endpoint still cannot be used to find out who has an account. Not
+   * awaited, for the same reason as above and one more: waiting would make a
+   * known address measurably slower to answer than an unknown one.
+   */
+  if (result) {
+    void mail.sendPasswordReset({
+      to: result.user.email,
+      name: result.user.name,
+      token: result.token,
+      ttlMinutes: service.RESET_TTL_MINUTES,
+    });
+  }
 
   return ok(res, { message: 'If an account exists for that address, a reset link is on its way.' });
 });
