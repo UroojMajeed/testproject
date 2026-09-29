@@ -127,6 +127,44 @@ describe('setting the buyback rate', () => {
     expect(screen.getByText(/worth handing over/i)).toBeInTheDocument();
   });
 
+  it('survives an environment with no scrollIntoView', async () => {
+    const user = userEvent.setup();
+    const real = Element.prototype.scrollIntoView;
+    // jsdom has none, and neither do some embedded webviews. An unguarded call
+    // threw inside an effect, which takes the whole tree down — so the screen
+    // meant to show somebody their rate rendered as a blank page.
+    delete Element.prototype.scrollIntoView;
+
+    try {
+      await renderRate();
+      await fill(user);
+      await user.click(screen.getByRole('button', { name: /set my rate/i }));
+
+      expect(await screen.findByRole('heading', { name: /here is what an hour/i })).toBeInTheDocument();
+    } finally {
+      Element.prototype.scrollIntoView = real;
+    }
+  });
+
+  it('brings the figure into view, since the form can push it below the fold', async () => {
+    const user = userEvent.setup();
+    const calls = [];
+    const real = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function spy(opts) { calls.push({ el: this, opts }); };
+
+    try {
+      await renderRate();
+      await fill(user);
+      await user.click(screen.getByRole('button', { name: /set my rate/i }));
+      await screen.findByRole('heading', { name: /here is what an hour/i });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].el).toHaveClass('reveal');
+    } finally {
+      Element.prototype.scrollIntoView = real;
+    }
+  });
+
   it('offers the way on once the figure has been seen', async () => {
     const user = userEvent.setup();
     await renderRate({}, (

@@ -103,6 +103,10 @@ export const DASHBOARD = {
   totals: { estimatedMinutes: 540, estimatedWeeklyCostMinor: 13500, estimatedAnnualCostMinor: 675000 },
   worst: INVOICING,
   weeksRecorded: 3,
+  // The weeks either side, for paging. Null both ways by default: one week on
+  // record is the case most screens are exercised against.
+  previousWeek: null,
+  nextWeek: null,
 };
 
 /** Everything a signed-in screen asks for, so a test only overrides what it cares about. */

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import DashboardPage from './DashboardPage.jsx';
 import { renderWithProviders } from '../../test/renderWithProviders.jsx';
-import { mockApi, success, signedInWorkspace, DASHBOARD } from '../../test/fetchMock.js';
+import { mockApi, success, signedInWorkspace, DASHBOARD, WORKSPACE_STATE } from '../../test/fetchMock.js';
 import { endpoints } from '../../lib/api/endpoints.js';
 
 const SESSION = success({
@@ -126,124 +127,75 @@ describe('what last week cost', () => {
   });
 });
 
-describe('what to do about it', () => {
-  it('draws all four quadrants, because a 2x2 missing a corner is not a 2x2', async () => {
+
+describe('the week on screen', () => {
+  it('offers the audit as a button on the week, not a place in the sidebar', async () => {
     await renderDashboard();
 
-    expect(screen.getByRole('heading', { name: /what to do about it/i })).toBeInTheDocument();
-    for (const name of ['Replace', 'Delegate', 'Produce', 'Invest']) {
-      expect(screen.getByRole('heading', { name })).toBeInTheDocument();
-    }
-    // An empty quadrant is itself worth seeing — an empty Replace says something.
-    expect(screen.getAllByText(/nothing here\./i).length).toBeGreaterThan(0);
+    // Recording a week is something you do *to* a week.
+    expect(screen.getByRole('link', { name: /this week’s audit|record this week/i }))
+      .toHaveAttribute('href', '/app/audit');
   });
 
-  it('labels the axes in the words the questions were asked in', async () => {
-    await renderDashboard();
-
-    // So the grid can be checked against the answers actually given.
-    expect(screen.getByText('Matters more')).toBeInTheDocument();
-    expect(screen.getByText('Drains you')).toBeInTheDocument();
-    expect(screen.getByText('Energises you')).toBeInTheDocument();
-  });
-
-  it('says what each quadrant means and what to do, not just its name', async () => {
-    await renderDashboard();
-
-    // "Delegate" is a word from a book. "Drains you, and the business would barely
-    // notice" is the sentence somebody can act on without having read it.
-    expect(screen.getByText(/drains you, and the business would barely notice/i)).toBeInTheDocument();
-    expect(screen.getByText(/does not need to be somebody senior/i)).toBeInTheDocument();
-  });
-
-  it('prices each quadrant, which is what turns an observation into a decision', async () => {
-    await renderDashboard();
-
-    const delegate = screen.getByRole('heading', { name: 'Delegate' }).closest('article');
-
-    // Invoicing: 4h a week at $15 → $60 a week, $3,000 over 50 weeks.
-    expect(delegate).toHaveTextContent('4h');
-    expect(delegate).toHaveTextContent('$3,000');
-    expect(delegate).toHaveTextContent('Invoicing');
-  });
-
-  it('orders a quadrant by value first, then by cost', async () => {
+  it('calls it "record" while the week is unfiled, and "audit" once it is', async () => {
     await renderDashboard({
-      'GET /api/v1/workspace/dashboard': success({
+      'GET /api/v1/workspace/state': success({ ...WORKSPACE_STATE, currentWeekFiled: false }),
+    });
+
+    expect(await screen.findByRole('link', { name: /record this week/i })).toBeInTheDocument();
+  });
+
+  it('offers no paging when there is only one week on record', async () => {
+    await renderDashboard();
+
+    // Two dead arrows say "there is more here" when there is not.
+    expect(screen.queryByRole('navigation', { name: /move between weeks/i })).not.toBeInTheDocument();
+  });
+
+  it('offers the week before once there is one', async () => {
+    await renderDashboard({
+      'GET /api/v1/workspace/dashboard': success({ ...DASHBOARD, previousWeek: '2026-09-14' }),
+    });
+
+    const paging = screen.getByRole('navigation', { name: /move between weeks/i });
+    expect(within(paging).getByRole('button', { name: /the week before/i })).toBeEnabled();
+    // Nothing newer exists, so there is nowhere forward to go.
+    expect(within(paging).getByRole('button', { name: /the week after/i })).toBeDisabled();
+    expect(within(paging).getByText(/the latest one/i)).toBeInTheDocument();
+  });
+
+  it('asks the server for the week it was told to show', async () => {
+    const user = userEvent.setup();
+    const { calls } = await renderDashboard({
+      'GET /api/v1/workspace/dashboard': success({ ...DASHBOARD, previousWeek: '2026-09-14' }),
+      'GET /api/v1/workspace/dashboard?week=2026-09-14': success({
         ...DASHBOARD,
-        matrix: {
-          ...DASHBOARD.matrix,
-          delegate: {
-            // As the server sends it: critical before low, though low costs more.
-            activities: [
-              { activityId: 'a3', name: 'Client onboarding', estimatedMinutes: 60, energy: -1, averageEnergy: -1, value: 'critical', quadrant: 'delegate', estimatedWeeklyCostMinor: 1500, estimatedAnnualCostMinor: 75000 },
-              { activityId: 'a1', name: 'Invoicing', estimatedMinutes: 240, energy: -2, averageEnergy: -2, value: 'low', quadrant: 'delegate', estimatedWeeklyCostMinor: 6000, estimatedAnnualCostMinor: 300000 },
-            ],
-            count: 2, estimatedMinutes: 300, estimatedWeeklyCostMinor: 7500, estimatedAnnualCostMinor: 375000,
-          },
-        },
+        week: { ...DASHBOARD.week, weekStarting: '2026-09-14', weekEnding: '2026-09-20' },
+        previousWeek: null,
+        nextWeek: '2026-09-21',
       }),
     });
 
-    const names = [...screen.getByRole('heading', { name: 'Delegate' }).closest('article')
-      .querySelectorAll('.drip__name')].map((el) => el.textContent);
+    await user.click(screen.getByRole('button', { name: /the week before/i }));
 
-    expect(names).toEqual(['Client onboarding', 'Invoicing']);
+    // Not recomputed here: one week's figures under another week's date is
+    // exactly what a client-side guess would produce.
+    await waitFor(() => {
+      expect(calls.some((c) => c.key === 'GET /api/v1/workspace/dashboard?week=2026-09-14')).toBe(true);
+    });
+    expect(await screen.findByRole('button', { name: /the week after/i })).toBeEnabled();
   });
+});
 
-  it('puts the two with something to do about them along the top of the grid', async () => {
+describe('what the week points at', () => {
+  it('points the worst activity at the roadmap rather than at a future step', async () => {
     await renderDashboard();
 
-    // Reading order is the priority order: the eye lands on the top row first, and
-    // Replace and Delegate are the two quadrants that ask for a decision.
-    const titles = [...document.querySelectorAll('.drip__title')].map((el) => el.textContent);
-
-    expect(titles).toEqual(['Replace', 'Produce', 'Delegate', 'Invest']);
-  });
-
-  it('asks for a sort rather than showing an empty diagram', async () => {
-    await renderDashboard({
-      'GET /api/v1/workspace/dashboard': success({
-        ...DASHBOARD,
-        activities: DASHBOARD.activities.map((row) => ({ ...row, value: null, quadrant: null })),
-        matrix: Object.fromEntries(Object.keys(DASHBOARD.matrix).map((name) => [name, {
-          activities: [], count: 0, estimatedMinutes: 0,
-          estimatedWeeklyCostMinor: 0, estimatedAnnualCostMinor: 0,
-        }])),
-        unsortedCount: 2,
-      }),
-    });
-
-    // No longer a dead end pointing at a screen of its own: the question is asked
-    // directly above, and the grid fills in as it is answered.
-    expect(screen.getByRole('heading', { name: /the matrix fills in as you answer/i })).toBeInTheDocument();
-    // The figures are still there. The matrix is the extra, not the price of entry.
-    expect(screen.getByText('$6,750')).toBeInTheDocument();
-  });
-
-  it('admits when the picture is partial rather than quietly dropping activities', async () => {
-    await renderDashboard({
-      'GET /api/v1/workspace/dashboard': success({ ...DASHBOARD, unsortedCount: 2 }),
-    });
-
-    expect(screen.getByText(/2 activities have no answer yet/i)).toBeInTheDocument();
-  });
-
-  it('counts one properly, because "1 activities" is how software sounds', async () => {
-    await renderDashboard({
-      'GET /api/v1/workspace/dashboard': success({ ...DASHBOARD, unsortedCount: 1 }),
-    });
-
-    expect(screen.getByText(/one activity has no answer yet/i)).toBeInTheDocument();
-  });
-
-  it('the verdict agrees with the matrix rather than promising it', async () => {
-    await renderDashboard();
-
-    // The worst activity is already sorted, so the matrix has named the move. The
-    // line under the verdict has to point past it, not back at it.
+    // It used to end on "the next step of the build", which is an IOU printed at
+    // the moment somebody is most likely to act.
     expect(screen.getByText(/delegate is the move/i)).toBeInTheDocument();
-    expect(screen.getByText(/who takes it on, and what that costs/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /put it on the roadmap/i }))
+      .toHaveAttribute('href', '/app/handover');
   });
 
   it('asks for an answer when the worst thing is the one nobody has sorted', async () => {
@@ -254,12 +206,13 @@ describe('what to do about it', () => {
       }),
     });
 
-    expect(screen.getByText(/answer one question about it/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /the matrix/i })).toHaveAttribute('href', '/app/matrix');
   });
 
-  it('stays quiet about gaps when there are none', async () => {
+  it('no longer carries the grid itself, which has a section of its own', async () => {
     await renderDashboard();
 
-    expect(screen.queryByText(/no answer yet/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.drip')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Delegate' })).not.toBeInTheDocument();
   });
 });

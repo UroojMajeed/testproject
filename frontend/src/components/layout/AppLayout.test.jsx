@@ -38,18 +38,20 @@ describe('the frame around the signed-in app', () => {
     await renderAt(paths.app);
 
     const links = within(sections()).getAllByRole('link');
-    expect(links.map((a) => a.textContent)).toEqual(['Your week', 'This week', 'Activities', 'Hand over', 'Your rate']);
+    // Four, deliberately. Recording a week is a button on the week, and the
+    // activities list is reached from there — a sidebar is for the places you go,
+    // not for every page that exists.
+    expect(links.map((a) => a.textContent)).toEqual(['Your week', 'The matrix', 'Handover roadmap', 'Your rate']);
     expect(links[0]).toHaveAttribute('href', paths.app);
-    expect(links[1]).toHaveAttribute('href', paths.audit);
-    expect(links[2]).toHaveAttribute('href', paths.activities);
-    expect(links[3]).toHaveAttribute('href', paths.handover);
-    expect(links[4]).toHaveAttribute('href', paths.rate);
+    expect(links[1]).toHaveAttribute('href', paths.matrix);
+    expect(links[2]).toHaveAttribute('href', paths.handover);
+    expect(links[3]).toHaveAttribute('href', paths.rate);
   });
 
   it('says which section you are in, out loud and not only in colour', async () => {
-    await renderAt(paths.audit);
+    await renderAt(paths.matrix);
 
-    const here = within(sections()).getByRole('link', { name: 'This week' });
+    const here = within(sections()).getByRole('link', { name: 'The matrix' });
     // aria-current is the part a screen reader gets; the class carries the weight
     // and the rule for everyone else.
     expect(here).toHaveAttribute('aria-current', 'page');
@@ -59,7 +61,7 @@ describe('the frame around the signed-in app', () => {
   });
 
   it('does not light up every section just because the URL starts the same way', async () => {
-    await renderAt(paths.audit);
+    await renderAt(paths.matrix);
 
     // "/app" is a prefix of "/app/audit", so without an exact match the dashboard
     // link would claim to be current on every page in the app.

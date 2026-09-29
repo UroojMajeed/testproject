@@ -79,9 +79,13 @@ export const endpoints = Object.freeze({
     // PUT { done } → 200 { handover }
     handoverStep: (id, key) => `${API_BASE}/workspace/handovers/${id}/steps/${key}`,
 
-    // → 200 { week, rate, activities, matrix, unsortedCount, totals, worst, weeksRecorded }
+    // → 200 { week, rate, activities, matrix, unsortedCount, totals, worst,
+    //         weeksRecorded, previousWeek, nextWeek }
     //   matrix: { delegate, replace, invest, produce }, each { activities, count,
     //   estimatedMinutes, estimatedWeeklyCostMinor, estimatedAnnualCostMinor }
-    dashboard: () => `${API_BASE}/workspace/dashboard`,
+    //   ?week=YYYY-MM-DD asks for one particular week; 404 if none was recorded
+    //   for it, 422 if it is not a date.
+    dashboard: (weekStarting = null) =>
+      `${API_BASE}/workspace/dashboard${weekStarting ? `?week=${encodeURIComponent(weekStarting)}` : ''}`,
   }),
 });

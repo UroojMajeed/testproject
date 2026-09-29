@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert } from '../../components/ui/Alert.jsx';
 import { FullPageSpinner } from '../../components/ui/FullPageSpinner.jsx';
@@ -5,7 +6,6 @@ import { useDashboard, useWorkspaceState, useAudits } from '../../lib/api/hooks.
 import { useAuth } from '../../context/useAuth.js';
 import { formatMoney, formatDuration, formatWeekRange } from '../../lib/money.js';
 import { energyLabel } from '../audit/energy.js';
-import { Matrix } from './Matrix.jsx';
 import { NeedsAnswer } from './NeedsAnswer.jsx';
 import { Progress } from './Progress.jsx';
 import { QUADRANT_COPY } from '../../lib/drip.js';
@@ -23,7 +23,16 @@ import { paths } from '../../routes/paths.js';
  * worse, and close the tab.
  */
 export default function DashboardPage() {
-  const { data, isPending, isError, error } = useDashboard();
+  /**
+   * Which week is on screen, or null for whichever the server calls current.
+   *
+   * Held here rather than in the URL: paging back is a glance, not a place, and a
+   * bookmarked /app should always open on the latest week rather than on whatever
+   * week somebody happened to be looking at in March.
+   */
+  const [viewing, setViewing] = useState(null);
+
+  const { data, isPending, isError, error } = useDashboard(viewing);
   const { data: state } = useWorkspaceState();
   // Every week on record, for the trend. No new endpoint: this one already exists
   // and the comparison is the client's to make.
@@ -40,7 +49,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { week, rate, activities, totals, worst, weeksRecorded, matrix, unsortedCount } = data;
+  const { week, rate, activities, totals, worst, weeksRecorded, previousWeek, nextWeek } = data;
   const currency = rate.currency;
 
   return (
@@ -54,7 +63,42 @@ export default function DashboardPage() {
               : 'No week recorded yet.'}
           </p>
         </div>
+
+        {/*
+          Recording a week is something you do to a week, so it sits on the week
+          rather than taking a place in the sidebar beside it.
+        */}
+        <Link to={paths.audit} className="btn btn-primary">
+          {state?.currentWeekFiled === false ? 'Record this week' : 'This week’s audit'}
+        </Link>
       </header>
+
+      {week && (previousWeek || nextWeek) ? (
+        <nav className="weeks" aria-label="Move between weeks">
+          <button
+            type="button"
+            className="btn btn-link btn-sm"
+            disabled={!previousWeek}
+            onClick={() => setViewing(previousWeek)}
+          >
+            ← The week before
+          </button>
+
+          <p className="weeks__which">
+            {formatWeekRange(week.weekStarting, week.weekEnding)}
+            {!nextWeek ? <span className="weeks__latest"> · the latest one</span> : null}
+          </p>
+
+          <button
+            type="button"
+            className="btn btn-link btn-sm"
+            disabled={!nextWeek}
+            onClick={() => setViewing(nextWeek)}
+          >
+            The week after →
+          </button>
+        </nav>
+      ) : null}
 
       {state?.currentWeekFiled === false && weeksRecorded > 0 ? (
         <Alert tone="info" className="mb-5">
@@ -101,7 +145,16 @@ export default function DashboardPage() {
           ) : null}
 
           <section aria-labelledby="ranked-heading" className="mt-6">
-            <h2 id="ranked-heading" className="eyebrow">Where it went</h2>
+            {/*
+              The only way to the activities list now that it is off the sidebar.
+              Renaming and archiving live there and nowhere else, so without this
+              the page would be orphaned — reachable by typing a URL, which is not
+              reachable.
+            */}
+            <div className="section-head">
+              <h2 id="ranked-heading" className="eyebrow">Where it went</h2>
+              <Link to={paths.activities} className="fs-sm">Rename or archive an activity</Link>
+            </div>
 
             <table className="ledger">
               <caption className="visually-hidden">
@@ -134,12 +187,12 @@ export default function DashboardPage() {
           </section>
 
           {/*
-            Above the matrix, not below it: answering a row here places the
-            activity in the grid underneath, and the point is to see that happen.
+            What is still owed. The matrix itself has moved to a section of its
+            own — four blocks and a pair of axes between a table and a verdict was
+            something to scroll past rather than something to read — but the
+            question that fills it belongs here, where the week is.
           */}
           <NeedsAnswer />
-
-          <Matrix matrix={matrix} currency={currency} unsortedCount={unsortedCount} />
 
           {weeks.data?.weeks?.length ? (
             <Progress weeks={weeks.data.weeks} rate={rate} currency={currency} />
@@ -154,14 +207,23 @@ export default function DashboardPage() {
                 your time. Not the largest number on the page — the one most worth handing over.
               </p>
               {/*
-                Said after the matrix, so it has to agree with it. Once an activity
-                is sorted the matrix has already named what to do; what is still
-                missing is who takes it on and what that costs, which is step 4.
+                The way on, not a description. The matrix lives on its own section
+                now, so this is the only place on the week that points at what to
+                do — and it points at a page rather than at the next step of the
+                build, which is what it used to promise.
               */}
               <p className="verdict__next">
-                {worst.quadrant
-                  ? `${QUADRANT_COPY[worst.quadrant].title} is the move. Who takes it on, and what that costs, is the next step of the build.`
-                  : 'Answer one question about it and this page will say what to do with it.'}
+                {worst.quadrant ? (
+                  <>
+                    {QUADRANT_COPY[worst.quadrant].title} is the move.{' '}
+                    <Link to={paths.handover}>Put it on the roadmap</Link> and work out who takes it on.
+                  </>
+                ) : (
+                  <>
+                    Answer one question about it — above — and{' '}
+                    <Link to={paths.matrix}>the matrix</Link> will say what to do with it.
+                  </>
+                )}
               </p>
             </section>
           ) : (

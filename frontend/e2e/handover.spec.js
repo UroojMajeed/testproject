@@ -17,10 +17,10 @@ test.describe('deciding what to hand over', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Hand over' }).click();
+    await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Handover roadmap' }).click();
 
     await expect(page).toHaveURL(/\/app\/handover$/);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/what to hand over/i);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/handover roadmap/i);
     // 4h a week at $15 over 50 weeks, and the rate that decides it.
     await expect(page.getByText(/4h a week is costing you \$3,000 a year/i)).toBeVisible();
     await expect(page.getByText(/that is your buyback rate/i)).toBeVisible();

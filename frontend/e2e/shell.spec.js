@@ -17,7 +17,7 @@ test.describe('the frame', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await expect(sections(page).getByRole('link')).toHaveText(['Your week', 'This week', 'Activities', 'Hand over', 'Your rate']);
+    await expect(sections(page).getByRole('link')).toHaveText(['Your week', 'The matrix', 'Handover roadmap', 'Your rate']);
     await expect(sections(page).getByRole('link', { name: 'Your week' })).toHaveAttribute('aria-current', 'page');
   });
 
@@ -25,10 +25,10 @@ test.describe('the frame', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await sections(page).getByRole('link', { name: 'This week' }).click();
+    await sections(page).getByRole('link', { name: 'The matrix' }).click();
 
-    await expect(page).toHaveURL(/\/app\/audit$/);
-    await expect(sections(page).getByRole('link', { name: 'This week' })).toHaveAttribute('aria-current', 'page');
+    await expect(page).toHaveURL(/\/app\/matrix$/);
+    await expect(sections(page).getByRole('link', { name: 'The matrix' })).toHaveAttribute('aria-current', 'page');
     // "/app" is a prefix of "/app/audit", so an inexact match would leave the
     // dashboard claiming to be current on every page in the app.
     await expect(sections(page).getByRole('link', { name: 'Your week' })).not.toHaveAttribute('aria-current', 'page');
@@ -37,7 +37,7 @@ test.describe('the frame', () => {
   test('carries the wordmark and the account controls once, for every page', async ({ page }) => {
     await stubApi(page, { signedIn: true });
 
-    for (const path of ['/app', '/app/audit', '/app/rate']) {
+    for (const path of ['/app', '/app/matrix', '/app/rate']) {
       await page.goto(path);
       await sections(page).waitFor();
       await expect(page.locator('.logo')).toHaveCount(1);
@@ -106,7 +106,7 @@ test.describe('the frame on a phone', () => {
   test('nothing overflows sideways with the frame up', async ({ page }) => {
     await stubApi(page, { signedIn: true });
 
-    for (const path of ['/app', '/app/audit', '/app/rate']) {
+    for (const path of ['/app', '/app/matrix', '/app/rate']) {
       await page.goto(path);
       await sections(page).waitFor();
       const over = await page.evaluate(() =>

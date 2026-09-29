@@ -1605,13 +1605,39 @@ a:hover .logo { color: var(--fg-default); }
 // ── The rate, revealed ──────────────────────────────────────────────────────
 // The first real output of the product. It gets a moment.
 
+/**
+ * The one loud thing in the product.
+ *
+ * Everything else is ink on paper, deliberately — and that is exactly what earns
+ * this card its colour. It is the first real output of the whole setup, arriving
+ * once, at the single moment somebody is most likely to decide whether any of
+ * this is worth their Friday. A tinted panel said "here is a number"; a filled
+ * one says "look at this".
+ *
+ * Solid accent with the on-accent foreground: the pair the contrast test already
+ * measures in both themes, so going loud costs no legibility.
+ */
 .reveal {
-  background: var(--bg-accent-subtle);
-  border: 1px solid var(--border-accent);
+  background: var(--accent-solid);
+  color: var(--fg-on-accent);
+  border: 0;
   border-radius: var(--radius-lg);
   padding: var(--space-6) var(--space-5);
   margin-bottom: var(--space-6);
-  color: var(--fg-accent-subtle);
+  box-shadow: var(--shadow-lg);
+}
+
+// White on blue in light, near-black on pale blue in dark — the inverse of the
+// page's own button, so the way onward is the brightest thing on the card.
+.reveal .btn-primary {
+  --bs-btn-bg: var(--fg-on-accent);
+  --bs-btn-color: var(--accent-solid);
+  --bs-btn-hover-bg: var(--fg-on-accent);
+  --bs-btn-hover-color: var(--accent-solid);
+  --bs-btn-border-color: transparent;
+  background: var(--fg-on-accent);
+  color: var(--accent-solid);
+  border-color: transparent;
 }
 
 .reveal__figure {
@@ -1648,7 +1674,10 @@ a:hover .logo { color: var(--fg-default); }
   gap: var(--space-4);
   margin: 0 0 var(--space-5);
   padding-top: var(--space-4);
-  border-top: 1px solid var(--border-accent);
+  // Drawn from the card's own foreground so it works on a filled background in
+  // either theme — a fixed white rule would vanish on the pale accent of dark.
+  border-top: 1px solid currentColor;
+  opacity: 0.92;
 }
 
 .reveal__facts dt { font-size: var(--text-sm); opacity: 0.85; margin-bottom: var(--space-1); }
@@ -1680,7 +1709,8 @@ a:hover .logo { color: var(--fg-default); }
 
 .candidate {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  // Rank, what it is, what it costs, the way to act on it.
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: var(--space-3) var(--space-4);
   align-items: center;
   background: var(--bg-surface);
@@ -1688,6 +1718,26 @@ a:hover .logo { color: var(--fg-default); }
   border-left: 3px solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
+}
+
+// The number that makes it a roadmap rather than a pile. aria-hidden in the
+// markup: an ordered list already tells a screen reader which one this is, and
+// hearing "1" twice is noise.
+.candidate__rank {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--fg-subtle);
+  min-width: 1.2em;
+  text-align: center;
+}
+
+.candidate__running {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--fg-subtle);
 }
 
 // The same two colours the matrix uses for these quadrants, so a row here is
@@ -1700,9 +1750,109 @@ a:hover .logo { color: var(--fg-default); }
 .candidate__cost { margin: 0; font-size: var(--text-sm); color: var(--fg-muted); white-space: nowrap; }
 
 @media (max-width: 46rem) {
-  .candidate { grid-template-columns: 1fr; }
+  .candidate { grid-template-columns: auto minmax(0, 1fr); }
+  // Under the name, spanning both, rather than squeezed beside it.
+  .candidate__cost,
+  .candidate .btn { grid-column: 2; }
   .candidate__cost { white-space: normal; }
+  .candidate .btn { justify-self: start; }
 }
+
+// ── The week, and moving between them ───────────────────────────────────────
+
+.weeks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-sunken);
+  border-radius: var(--radius);
+}
+
+.weeks__which {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+  text-align: center;
+}
+
+.weeks__latest { color: var(--fg-subtle); }
+
+// ── The matrix, explained ───────────────────────────────────────────────────
+
+.explain {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.explain__title { font-size: var(--text-lg); margin-bottom: var(--space-4); }
+
+.explain__axes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-4);
+}
+
+.explain__axis {
+  display: block;
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-1);
+}
+
+.explain__detail {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-muted);
+}
+
+.explain__why {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.explain__quadrants {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+
+.explain__quadrant {
+  border-left: 3px solid var(--border-default);
+  padding-left: var(--space-3);
+}
+
+// The same four colours the grid uses, so a definition here is recognisably the
+// same thing as a cell there.
+.explain__quadrant[data-quadrant='replace'] { border-left-color: var(--fg-danger); }
+.explain__quadrant[data-quadrant='delegate'] { border-left-color: var(--fg-warning); }
+.explain__quadrant[data-quadrant='produce'] { border-left-color: var(--fg-success); }
+.explain__quadrant[data-quadrant='invest'] { border-left-color: var(--accent-solid); }
+
+.explain__quadrant dt { font-weight: var(--weight-semibold); margin-bottom: var(--space-1); }
+.explain__quadrant dd { margin: 0; }
+
+.explain__meaning,
+.explain__action {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.explain__meaning { color: var(--fg-muted); }
+.explain__action { color: var(--fg-subtle); margin-top: var(--space-1); }
 
 .handover {
   background: var(--bg-surface);
@@ -1795,4 +1945,13 @@ a:hover .logo { color: var(--fg-default); }
   margin: var(--space-4) 0 0;
   font-size: var(--text-sm);
   color: var(--fg-success-subtle);
+}
+
+// A section heading with a way onward beside it, rather than under it.
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
 }

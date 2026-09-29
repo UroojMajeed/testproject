@@ -3,10 +3,14 @@ import { paths } from './paths.js';
 /**
  * The sections of the app, in the order they appear in the frame.
  *
- * Data rather than markup, because this list is the thing that grows: each step we
- * build adds a line here and nothing else. Only sections that exist are listed —
- * a nav item that goes nowhere is a promise the app cannot keep, and the one
- * decision here we would regret.
+ * Data rather than markup, because this list is the thing that grows: each step
+ * we build adds a line here and nothing else. Only sections that exist are
+ * listed — a nav item that goes nowhere is a promise the app cannot keep.
+ *
+ * Four, deliberately. Recording a week is something you do *to* a week, so it is
+ * a button on the week rather than a destination beside it; and the activities
+ * list is reached from there too. A sidebar is for the places you go, not for
+ * every page that exists.
  *
  * `end` marks a path that must match exactly. Without it "/app" would light up on
  * every page beneath it, since every one of them starts with those four
@@ -17,7 +21,7 @@ export const NAV = Object.freeze([
     to: paths.app,
     end: true,
     label: 'Your week',
-    hint: 'What last week cost, and what to do about it',
+    hint: 'What the week cost, and what still needs an answer',
     icon: (
       <>
         <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
@@ -26,36 +30,24 @@ export const NAV = Object.freeze([
     ),
   },
   {
-    to: paths.audit,
-    label: 'This week',
-    hint: 'Record the hours and how they felt',
+    to: paths.matrix,
+    label: 'The matrix',
+    hint: 'Every activity placed by what it costs you and what it is worth',
     icon: (
       <>
-        <path d="M5 3.5h14a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5Z" />
-        <path d="M7.5 9h9M7.5 12.5h9M7.5 16h5" strokeLinecap="round" />
-      </>
-    ),
-  },
-  {
-    to: paths.activities,
-    label: 'Activities',
-    hint: 'The things that keep coming back, and what each is worth',
-    icon: (
-      <>
-        <path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11" strokeLinecap="round" />
-        <path d="M3.5 6.3 4.6 7.4 6.8 5.2M3.5 11.8 4.6 12.9 6.8 10.7M3.5 17.3 4.6 18.4 6.8 16.2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="3" y="3" width="18" height="18" rx="2.5" />
+        <path d="M12 3v18M3 12h18" strokeLinecap="round" />
       </>
     ),
   },
   {
     to: paths.handover,
-    label: 'Hand over',
-    hint: 'What to stop doing, and what that takes',
+    label: 'Handover roadmap',
+    hint: 'What to stop doing, in the order worth doing it',
     icon: (
       <>
-        <path d="M3 11.5 7 8v2.5h6.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M21 14.5 17 18v-2.5h-6.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M13.5 10.5H21M10.5 15.5H3" strokeLinecap="round" />
+        <path d="M5 20V8.5M5 8.5 8.5 5M5 8.5 1.5 5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M10 7h10M10 12h7M10 17h4" strokeLinecap="round" />
       </>
     ),
   },

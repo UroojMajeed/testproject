@@ -101,8 +101,11 @@ export function Matrix({ matrix, currency, unsortedCount }) {
                      itself worth seeing, and a 2×2 missing a corner is not a 2×2. */
                   <p className="drip__empty">Nothing here.</p>
                 )}
-
-                <p className="drip__action">{copy.action}</p>
+                {/*
+                  No action sentence in the cell. It is spelled out once in the
+                  glossary under the grid, and saying it in both places made every
+                  cell three lines taller for words the reader had just read.
+                */}
               </article>
             );
           })}

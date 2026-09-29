@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router-dom';
@@ -95,15 +95,6 @@ export default function RatePage() {
     return { effective: Math.round(income / hours), buyback: Math.round(income / hours / 4) };
   }, [values.annualIncome, values.hoursPerWeek, values.weeksPerYear]);
 
-  /**
-   * First time through, go on. Afterwards, confirm in place.
-   *
-   * Saving used to hand over a whole screen that repeated the figure the form had
-   * already been showing live as it was typed, then asked for one more click to
-   * carry on — a ceremony for a number nobody had stopped looking at. Somebody
-   * setting their rate for the first time is in the middle of a three-step setup
-   * and wants the next step; somebody adjusting it later wants to know it took.
-   */
   /**
    * Saving reveals the figure here, on the same screen, rather than handing over
    * to another one.
@@ -253,9 +244,34 @@ export default function RatePage() {
  */
 function RateResult({ rate, onNext, isFirst }) {
   const hourly = rate.rateMinorPerHour;
+  const card = useRef(null);
+
+  /**
+   * Bring it into view, once, when it appears.
+   *
+   * The form is three fields and a button, so on a laptop the figure can land
+   * below the fold — the first real output of the product, arriving where nobody
+   * is looking. Scrolling to it is the difference between a number that happened
+   * and a number that was read.
+   *
+   * `smooth` only for people who have not asked for less movement: a page that
+   * jumps under somebody with vestibular sensitivity is worse than one that does
+   * not move at all, and this is the one place the reduced-motion block in
+   * custom.scss cannot reach, because it is behaviour rather than CSS.
+   */
+  useEffect(() => {
+    // Guarded, and not out of caution about types: an unguarded call threw where
+    // scrollIntoView does not exist, and a throw in an effect takes the whole
+    // tree down — so the screen that was meant to show somebody their rate
+    // rendered as a blank page instead. A nicety must never cost the page.
+    if (typeof card.current?.scrollIntoView !== 'function') return;
+
+    const calm = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    card.current.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' });
+  }, []);
 
   return (
-    <section className="reveal" aria-labelledby="reveal-figure">
+    <section className="reveal" aria-labelledby="reveal-figure" ref={card}>
       <p className="reveal__figure numeric" id="reveal-figure" key={hourly}>
         {formatMoney(hourly, rate.currency)}
         <span className="reveal__unit"> an hour</span>

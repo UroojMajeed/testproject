@@ -27,7 +27,9 @@ test.describe('the activities list', () => {
     await stubApi(page, { signedIn: true });
     await page.goto('/app');
 
-    await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Activities' }).click();
+    // Off the sidebar, linked from the week — renaming and archiving live here
+    // and nowhere else, so it must stay reachable by something other than a URL.
+    await page.getByRole('link', { name: /rename or archive an activity/i }).click();
 
     await expect(page).toHaveURL(/\/app\/activities$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/your activities/i);
@@ -45,15 +47,18 @@ test.describe('the activities list', () => {
    */
   test('an answer here makes the dashboard go and ask again', async ({ page }) => {
     const api = await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await expect(page.locator('.drip__cell[data-quadrant="delegate"]')).toContainText('Invoicing');
 
     const before = api.callsTo('/api/v1/workspace/dashboard').length;
 
-    await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Activities' }).click();
+    // Via the week, because that is the only route to this list now — and a test
+    // that typed the URL would keep passing if the link were ever dropped.
+    await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Your week' }).click();
+    await page.getByRole('link', { name: /rename or archive an activity/i }).click();
     await rowFor(page, 'Invoicing').getByRole('combobox').selectOption('critical');
     await page.getByRole('navigation', { name: /sections/i }).getByRole('link', { name: 'Your week' }).click();
-    await page.getByRole('heading', { name: /what to do about it/i }).waitFor();
+    await page.getByRole('heading', { name: /where it went/i }).waitFor();
 
     expect(api.callsTo('/api/v1/workspace/dashboard').length).toBeGreaterThan(before);
   });

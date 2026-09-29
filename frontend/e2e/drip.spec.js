@@ -15,7 +15,7 @@ const cell = (page, name) => page.locator(`.drip__cell[data-quadrant="${name}"]`
 test.describe('the DRIP matrix', () => {
   test('is a real 2x2 with every quadrant drawn', async ({ page }) => {
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
 
     await expect(page.getByRole('heading', { name: /what to do about it/i })).toBeVisible();
 
@@ -31,7 +31,7 @@ test.describe('the DRIP matrix', () => {
     // test underneath.
     await page.setViewportSize({ width: 1280, height: 900 });
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     for (const label of ['Matters more', 'Matters less', 'Drains you', 'Energises you']) {
@@ -42,7 +42,7 @@ test.describe('the DRIP matrix', () => {
   test('the value axis points the way the grid is actually laid out', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 1000 });
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     const labels = await page.locator('.drip__axis--y span').evaluateAll((ns) =>
@@ -65,7 +65,7 @@ test.describe('the DRIP matrix', () => {
   test('stops being a grid on a phone without stopping making sense', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     // A 2x2 at 390px is unreadable, so it stacks and the axes go. What cannot go
@@ -77,7 +77,7 @@ test.describe('the DRIP matrix', () => {
 
   test('puts each activity in its quadrant, priced', async ({ page }) => {
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     await expect(cell(page, 'delegate')).toContainText('Invoicing');
@@ -89,7 +89,7 @@ test.describe('the DRIP matrix', () => {
   test('the grid keeps its shape on a phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     for (const name of ['replace', 'delegate', 'produce', 'invest']) {
@@ -115,11 +115,13 @@ test.describe('the DRIP matrix', () => {
         unsortedCount: 2,
       },
     });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
 
     await expect(page.getByRole('heading', { name: /the matrix fills in as you answer/i })).toBeVisible();
-    // The figures are still there: the matrix is the extra, not the price of entry.
-    await expect(page.getByText('$7,500')).toBeVisible();
+    // The idea is still explained. An empty grid with no explanation teaches
+    // nobody what the grid is for, which is the one thing this page owes.
+    await expect(page.getByRole('heading', { name: /how an activity gets placed/i })).toBeVisible();
+    await expect(page.getByText(/delegate against replace/i)).toBeVisible();
 
     expect(console_.errors).toEqual([]);
   });
@@ -128,10 +130,11 @@ test.describe('the DRIP matrix', () => {
 test.describe('the question that fills it', () => {
   test('is asked on the dashboard, above the grid, not on a screen of its own', async ({ page }) => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
 
-    // No redirect anywhere: the dashboard is what a finished audit leads to.
-    await expect(page).toHaveURL(/\/app$/);
+    // No redirect anywhere: the dashboard is what a finished audit leads to, and
+    // the question is asked on the matrix rather than on a screen of its own.
+    await expect(page).toHaveURL(/\/app\/matrix$/);
     await expect(page.locator('.needs')).toBeVisible();
     await expect(page.locator('.needs__item')).toHaveCount(2);
 
@@ -142,7 +145,7 @@ test.describe('the question that fills it', () => {
 
   test('answering a row takes it off the list', async ({ page }) => {
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.needs__item').first().waitFor();
 
     const row = page.locator('.needs__item').filter({ hasText: 'Bookkeeping' });
@@ -154,7 +157,7 @@ test.describe('the question that fills it', () => {
 
   test('is not there at all once everything has an answer', async ({ page }) => {
     await stubApi(page, { signedIn: true });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.drip').waitFor();
 
     await expect(page.locator('.needs')).toHaveCount(0);
@@ -163,7 +166,7 @@ test.describe('the question that fills it', () => {
   test('every answer is a real target on a phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stubApi(page, { signedIn: true, unsorted: UNSORTED });
-    await page.goto('/app');
+    await page.goto('/app/matrix');
     await page.locator('.needs__item').first().waitFor();
 
     for (const label of ['Revenue stops', 'Not much, honestly']) {

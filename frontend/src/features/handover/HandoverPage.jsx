@@ -35,17 +35,32 @@ export default function HandoverPage() {
   }
 
   const { candidates, totals, breakEvenMinorPerHour, rate } = plan.data;
-  const waiting = candidates.filter((row) => !row.handoverId);
+  /**
+   * Heaviest first, by the hours it actually takes.
+   *
+   * The server ranks by cost weighted for how much a thing takes out of you,
+   * which is the right order for "what is worst". A roadmap is a different
+   * question — what to do first — and for that the honest answer is the one that
+   * gives the most time back, because that is what buys the room to do the next.
+   */
+  const waiting = candidates
+    .filter((row) => !row.handoverId)
+    .sort((a, b) => b.estimatedMinutes - a.estimatedMinutes);
+
   const started = handovers.data?.handovers ?? [];
   const currency = rate.currency;
+
+  /* Running total down the list: what you would have back by the end of each step. */
+  let cumulative = 0;
 
   return (
     <main id="main" tabIndex={-1} className="page-width app-page">
       <header className="app-header">
         <div>
-          <h1 className="app-header__title">What to hand over</h1>
+          <h1 className="app-header__title">Handover roadmap</h1>
           <p className="app-header__subtitle">
-            The parts of your week that drain you. Everything else is yours to keep.
+            Everything that drains you, heaviest first. Work down the list — each one you
+            hand over is time back every week, not once.
           </p>
         </div>
       </header>
@@ -88,35 +103,51 @@ export default function HandoverPage() {
 
           {waiting.length ? (
             <section aria-labelledby="waiting-heading" className="mt-6">
-              <h2 id="waiting-heading" className="eyebrow">Worth handing over</h2>
+              <h2 id="waiting-heading" className="eyebrow">In the order worth doing it</h2>
 
               <Alert tone="error">{start.error?.userMessage}</Alert>
 
-              <ul className="candidates">
-                {waiting.map((row) => (
-                  <li key={row.activityId} className="candidate" data-quadrant={row.quadrant}>
-                    <div className="candidate__what">
-                      <p className="candidate__name">{row.name}</p>
-                      <p className="candidate__meaning">{QUADRANT_COPY[row.quadrant]?.meaning}</p>
-                    </div>
+              {/*
+                Numbered, because that is what makes it a roadmap rather than a
+                pile. The running total beside each one answers the question
+                somebody actually has — "how much of my week do I get back if I
+                only manage the first two".
+              */}
+              <ol className="candidates">
+                {waiting.map((row, index) => {
+                  cumulative += row.estimatedMinutes;
+                  return (
+                    <li key={row.activityId} className="candidate" data-quadrant={row.quadrant}>
+                      <p className="candidate__rank" aria-hidden="true">{index + 1}</p>
 
-                    <p className="candidate__cost">
-                      <strong className="numeric">{formatDuration(row.estimatedMinutes)}</strong> a week
-                      {' · '}
-                      <strong className="numeric">{formatMoney(row.estimatedAnnualCostMinor, currency)}</strong> a year
-                    </p>
+                      <div className="candidate__what">
+                        <p className="candidate__name">{row.name}</p>
+                        <p className="candidate__meaning">{QUADRANT_COPY[row.quadrant]?.meaning}</p>
+                      </div>
 
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      disabled={start.isPending}
-                      onClick={() => start.mutate(row.activityId)}
-                    >
-                      Hand this over
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <p className="candidate__cost">
+                        <strong className="numeric">{formatDuration(row.estimatedMinutes)}</strong> a week
+                        {' · '}
+                        <strong className="numeric">{formatMoney(row.estimatedAnnualCostMinor, currency)}</strong> a year
+                        {index > 0 ? (
+                          <span className="candidate__running">
+                            {formatDuration(cumulative)} a week back by here
+                          </span>
+                        ) : null}
+                      </p>
+
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        disabled={start.isPending}
+                        onClick={() => start.mutate(row.activityId)}
+                      >
+                        Hand this over
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
             </section>
           ) : null}
 

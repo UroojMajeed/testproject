@@ -130,10 +130,17 @@ export function useAudits() {
   });
 }
 
-export function useDashboard() {
+/**
+ * @param weekStarting a week to look at, or null for whichever is current.
+ *
+ * The week is part of the key, so paging back and forward is instant the second
+ * time and two weeks can never share one cached answer — which would put one
+ * week's figures under another week's date.
+ */
+export function useDashboard(weekStarting = null) {
   return useQuery({
-    queryKey: ['workspace', 'dashboard'],
-    queryFn: () => api.get(endpoints.workspace.dashboard()),
+    queryKey: ['workspace', 'dashboard', weekStarting],
+    queryFn: () => api.get(endpoints.workspace.dashboard(weekStarting)),
   });
 }
 

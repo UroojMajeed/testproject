@@ -14,6 +14,15 @@ export const paths = Object.freeze({
   app: '/app',
   rate: '/app/rate',
   audit: '/app/audit',
-  activities: '/app/activities',
+  matrix: '/app/matrix',
   handover: '/app/handover',
+
+  /**
+   * Off the sidebar, still reachable.
+   *
+   * Renaming an activity and archiving one live only here, so dropping the route
+   * with the nav item would quietly delete working features. It is linked from
+   * the week instead of taking a place in a five-item frame.
+   */
+  activities: '/app/activities',
 });
