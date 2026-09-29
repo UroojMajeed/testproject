@@ -56,10 +56,31 @@ sign in → buyback rate → first audit → first sort → dashboard → every 
 Only the *first* sort gates. After that an unsorted activity is a prompt on the
 dashboard, never a wall in front of figures somebody already has.
 
-Deliberately **not** in step 3, each being a step of its own: bundling activities
-into a role, the hiring roadmap, playbooks, delegation tracking, any AI, calendar
-import. Step 3 names the quadrant and gives per-quadrant totals; step 4 turns that
-into a plan.
+Deliberately **not** in step 3, each being a step of its own: the hiring roadmap,
+playbooks, any AI, calendar import.
+
+**Step 4 — handing it over.** Done. The draining half of the matrix, priced, with
+a checklist against each one.
+
+```
+dashboard → what to hand over → a checklist per activity → handed over
+```
+
+- Only **Replace and Delegate** are proposed. Handing over the work you enjoy and
+  are good at is the mistake the matrix exists to stop.
+- **No salary, ever.** The test is "would you pay somebody less than your own hour
+  is worth", which the workspace can already answer. A market rate we invented is
+  a number somebody would hire on.
+- The checklist is **fixed, not composed**. Asked to invent the steps most people
+  write "train them" and stop; what sinks a handover is what done looks like,
+  which logins it needs, and who checks that it worked.
+- **Status is derived from the boxes**, never set by hand.
+- Costs are **stamped at the decision**, per rule 9.
+
+Mail is real as of step 4: a transport seam with smtp, a file outbox for
+development, and a log transport for tests. Production refuses to boot on
+anything but smtp — mail that silently goes nowhere is how password reset stayed
+broken from step 1 to step 4.
 
 When asked for something outside the current step, say so before building it.
 Scope creep is the thing this rebuild exists to avoid.
