@@ -50,3 +50,12 @@ export const saveWeekSchema = {
 };
 
 export const weekParamSchema = { params: z.object({ weekStarting: isoDate }) };
+
+/**
+ * The dashboard's optional `?week=`.
+ *
+ * Optional because the common case is "the most recent week" and asking the
+ * client to name it would mean the client deciding which week that is — which is
+ * the server's answer to give.
+ */
+export const dashboardQuerySchema = { query: z.object({ week: isoDate.optional() }) };

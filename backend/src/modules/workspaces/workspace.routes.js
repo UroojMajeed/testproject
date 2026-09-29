@@ -9,7 +9,7 @@ import { setRateSchema } from '../rates/rate.validation.js';
 import {
   createActivitySchema, renameActivitySchema, activityIdSchema, setValueSchema,
 } from '../activities/activity.validation.js';
-import { saveWeekSchema, weekParamSchema } from '../audits/audit.validation.js';
+import { saveWeekSchema, weekParamSchema, dashboardQuerySchema } from '../audits/audit.validation.js';
 import {
   startHandoverSchema, handoverIdSchema, setStepSchema, updateHandoverSchema,
 } from '../handovers/handover.validation.js';
@@ -55,7 +55,7 @@ workspaceRouter.get('/audits', audits.list);
 workspaceRouter.get('/audits/:weekStarting', validate(weekParamSchema), audits.show);
 workspaceRouter.put('/audits/:weekStarting', validate(saveWeekSchema), audits.save);
 
-workspaceRouter.get('/dashboard', dashboard.show);
+workspaceRouter.get('/dashboard', validate(dashboardQuerySchema), dashboard.show);
 
 /**
  * Step 4: what to do about the draining half of the week.

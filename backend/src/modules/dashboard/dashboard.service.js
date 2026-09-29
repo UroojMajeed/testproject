@@ -1,3 +1,4 @@
+import { ApiError } from '../../utils/ApiError.js';
 import { costOfMinutes, annualisedCost } from '../rates/rate.formula.js';
 import { classify, averageEnergy, QUADRANTS, valueRank } from '../drip/drip.js';
 import * as rates from '../rates/rate.service.js';
@@ -16,7 +17,7 @@ import * as activities from '../activities/activity.service.js';
  * A reader should be able to check the arithmetic, and a figure quoted in June
  * should still be explicable after the rate changes in July.
  */
-export async function forWorkspace(workspace, userId) {
+export async function forWorkspace(workspace, userId, { weekStarting = null } = {}) {
   const rate = await rates.requireCurrentRate(workspace._id, userId);
 
   const [weeks, activityRows] = await Promise.all([
@@ -43,9 +44,21 @@ export async function forWorkspace(workspace, userId) {
     }
   }
 
-  // The most recent finished week is the headline. Weeks the owner marked atypical
-  // are still shown, but they do not get to be the number everything is judged by.
-  const latest = weeks.find((week) => week.isTypical) ?? weeks[0] ?? null;
+  /**
+   * Which week this is about.
+   *
+   * With no week asked for, the most recent finished one — weeks marked atypical
+   * are still shown, but they do not get to be the number everything else is
+   * judged by. With a week asked for, that one, so the client can page back
+   * through what it already has rather than the server deciding for it.
+   */
+  const latest = weekStarting
+    ? weeks.find((week) => week.weekStarting === weekStarting) ?? null
+    : weeks.find((week) => week.isTypical) ?? weeks[0] ?? null;
+
+  // Asked for a week that is not on record. A 404 rather than silently showing a
+  // different week, which would put one week's figures under another week's date.
+  if (weekStarting && !latest) throw ApiError.notFound('No week recorded for that date');
 
   if (!latest) {
     return {
@@ -57,8 +70,21 @@ export async function forWorkspace(workspace, userId) {
       totals: { estimatedMinutes: 0, estimatedWeeklyCostMinor: 0, estimatedAnnualCostMinor: 0 },
       worst: null,
       weeksRecorded: 0,
+      previousWeek: null,
+      nextWeek: null,
     };
   }
+
+  /**
+   * The weeks either side, for paging.
+   *
+   * listWeeks answers newest first, so the *next* week is the entry before this
+   * one and the *previous* is the entry after — which reads backwards and is
+   * exactly the sort of thing to get wrong silently, hence saying it here.
+   */
+  const at = weeks.findIndex((week) => week.weekStarting === latest.weekStarting);
+  const previousWeek = weeks[at + 1]?.weekStarting ?? null;
+  const nextWeek = at > 0 ? weeks[at - 1].weekStarting : null;
 
   const rows = latest.entries.map((entry) => {
     const id = String(entry.activityId);
@@ -115,6 +141,8 @@ export async function forWorkspace(workspace, userId) {
     },
     worst,
     weeksRecorded: weeks.length,
+    previousWeek,
+    nextWeek,
   };
 }
 

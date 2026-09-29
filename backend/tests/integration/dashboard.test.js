@@ -168,3 +168,75 @@ describe('an unusual week', () => {
     expect(res.body.data.weeksRecorded).toBe(2);
   });
 });
+
+describe('paging back through the weeks', () => {
+  /** Two filed weeks, the older one pushed back seven days. Newest returned first. */
+  async function twoWeeks() {
+    const { session, weekStarting } = await fileWeek([
+      { activityName: 'Invoicing', estimatedMinutes: 240, energy: -2 },
+    ]);
+
+    const [y, m, d] = weekStarting.split('-').map(Number);
+    const older = new Date(Date.UTC(y, m - 1, d) - 7 * 86_400_000).toISOString().slice(0, 10);
+    await AuditWeek.updateMany({}, { weekStarting: older }).setOptions({ allTenants: true });
+
+    await api().get(`${WS}/audits/current`).set(session.auth());
+    await api().put(`${WS}/audits/${weekStarting}`).set(session.auth()).send({
+      entries: [{ activityName: 'Client delivery', estimatedMinutes: 360, energy: -1 }],
+      status: 'complete',
+    });
+
+    return { session, newer: weekStarting, older };
+  }
+
+  it('points at the week before, and at nothing after the newest', async () => {
+    const { session, newer, older } = await twoWeeks();
+
+    const res = await dashboard(session);
+
+    expect(res.body.data.week.weekStarting).toBe(newer);
+    expect(res.body.data.previousWeek).toBe(older);
+    // Nothing newer exists, so there is nowhere forward to go.
+    expect(res.body.data.nextWeek).toBeNull();
+  });
+
+  it('shows the week that was asked for, with the way back out', async () => {
+    const { session, newer, older } = await twoWeeks();
+
+    const res = await api().get(`${WS}/dashboard?week=${older}`).set(session.auth());
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.week.weekStarting).toBe(older);
+    expect(res.body.data.activities.map((a) => a.name)).toEqual(['Invoicing']);
+    expect(res.body.data.nextWeek).toBe(newer);
+    expect(res.body.data.previousWeek).toBeNull();
+  });
+
+  it('prices the week asked for, not the latest one', async () => {
+    const { session, older } = await twoWeeks();
+
+    const res = await api().get(`${WS}/dashboard?week=${older}`).set(session.auth());
+
+    // Four hours at the $15 buyback rate, which is the older week — the newer one
+    // is six. Putting one week's figures under another week's date is the exact
+    // failure a week parameter invites.
+    expect(res.body.data.totals.estimatedMinutes).toBe(240);
+  });
+
+  it('refuses a week that is not on record rather than showing a different one', async () => {
+    const { session } = await twoWeeks();
+
+    const res = await api().get(`${WS}/dashboard?week=1999-01-04`).set(session.auth());
+
+    expect(res.status).toBe(404);
+  });
+
+  it('refuses a week that is not a date', async () => {
+    const { session } = await twoWeeks();
+
+    const res = await api().get(`${WS}/dashboard?week=last-tuesday`).set(session.auth());
+
+    // 422 naming the parameter, not a silent miss that falls back to the latest.
+    expect(res.status).toBe(422);
+  });
+});
